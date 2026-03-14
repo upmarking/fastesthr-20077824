@@ -59,7 +59,7 @@ export default function ForgotPassword() {
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" placeholder="you@company.com" {...register('email')} />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {errors.email && <p className="text-sm text-destructive">{errors.email.message as string}</p>}
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
