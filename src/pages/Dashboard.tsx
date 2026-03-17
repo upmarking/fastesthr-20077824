@@ -38,49 +38,57 @@ function CompanyAdminDashboard() {
   const { profile } = useAuthStore();
 
   const { data: employeeCount = 0, isLoading: loadingEmployees } = useQuery({
-    queryKey: ['employee-count'],
+    queryKey: ['employee-count', profile?.company_id],
     queryFn: async () => {
       const { count } = await supabase
         .from('employees')
         .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile!.company_id!)
         .is('deleted_at', null);
       return count || 0;
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: leaveRequests = [], isLoading: loadingLeave } = useQuery({
-    queryKey: ['pending-leaves'],
+    queryKey: ['pending-leaves', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('leave_requests')
         .select('*, employees!leave_requests_employee_id_fkey(first_name, last_name)')
+        .eq('company_id', profile!.company_id!)
         .eq('status', 'pending')
         .limit(5);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: openJobs = 0 } = useQuery({
-    queryKey: ['open-jobs'],
+    queryKey: ['open-jobs', profile?.company_id],
     queryFn: async () => {
       const { count } = await supabase
         .from('jobs')
         .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile!.company_id!)
         .eq('status', 'open');
       return count || 0;
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ['recent-announcements'],
+    queryKey: ['recent-announcements', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('announcements')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false })
         .limit(3);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   return (

@@ -12,27 +12,31 @@ export default function Performance() {
   const { profile } = useAuthStore();
 
   const { data: goals = [], isLoading: loadingGoals } = useQuery({
-    queryKey: ['goals'],
+    queryKey: ['goals', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('goals')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false })
         .limit(20);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: reviewCycles = [], isLoading: loadingCycles } = useQuery({
-    queryKey: ['review-cycles'],
+    queryKey: ['review-cycles', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('review_cycles')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false })
         .limit(5);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const activeGoals = goals.filter((g: any) => g.status === 'active');

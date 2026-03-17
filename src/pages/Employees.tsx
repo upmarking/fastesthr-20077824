@@ -8,20 +8,23 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Plus, Search, Grid3X3, List } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Employees() {
   const navigate = useNavigate();
+  const { profile } = useAuthStore();
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['employees', search],
+    queryKey: ['employees', search, profile?.company_id],
     queryFn: async () => {
       let query = supabase
         .from('employees')
         .select('*, departments(name), designations(title)')
+        .eq('company_id', profile!.company_id!)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
@@ -32,6 +35,7 @@ export default function Employees() {
       const { data } = await query;
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const statusColor: Record<string, string> = {

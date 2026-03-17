@@ -1,1 +1,7 @@
 project_id = "swlknrfufxsvpkfulqcx"
+
+[functions.test-smtp]
+verify_jwt = false
+
+[functions.send-offer-letter]
+verify_jwt = false

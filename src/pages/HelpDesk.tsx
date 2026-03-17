@@ -6,17 +6,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Plus, LifeBuoy, Clock, MessageSquare, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 
 export default function HelpDesk() {
+  const { profile } = useAuthStore();
   const [search, setSearch] = useState('');
 
   const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ['tickets', search],
+    queryKey: ['tickets', search, profile?.company_id],
     queryFn: async () => {
       let query = supabase
         .from('tickets')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -27,6 +30,7 @@ export default function HelpDesk() {
       const { data } = await query;
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const openCount = tickets.filter((t: any) => t.status === 'open').length;

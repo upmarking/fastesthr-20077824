@@ -5,19 +5,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Megaphone, Pin, CalendarDays, Eye } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function Announcements() {
+  const { profile } = useAuthStore();
+
   const { data: announcements = [], isLoading } = useQuery({
-    queryKey: ['announcements'],
+    queryKey: ['announcements', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('announcements')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(20);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   return (

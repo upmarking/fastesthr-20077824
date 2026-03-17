@@ -4,26 +4,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PieChart, BarChart3, Download, Filter, Users, Calendar, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function Reports() {
+  const { profile } = useAuthStore();
+
   // Headcount by department
   const { data: departments = [], isLoading: loadingDepts } = useQuery({
-    queryKey: ['report-departments'],
+    queryKey: ['report-departments', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('departments').select('id, name');
+      const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile!.company_id!);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: employees = [], isLoading: loadingEmps } = useQuery({
-    queryKey: ['report-employees'],
+    queryKey: ['report-employees', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('employees')
         .select('id, department_id, employment_type, status, gender')
+        .eq('company_id', profile!.company_id!)
         .is('deleted_at', null);
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   // Compute department headcount

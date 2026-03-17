@@ -33,36 +33,40 @@ export default function NewEmployee() {
     gender: 'male' as typeof GENDERS[number],
     employment_type: 'full_time' as typeof EMPLOYMENT_TYPES[number],
     status: 'active' as typeof STATUSES[number],
-    manager_id: '',
+    reporting_manager_id: '',
   });
 
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments'],
+    queryKey: ['departments', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('departments').select('id, name').order('name');
+      const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile!.company_id!).order('name');
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: designations = [] } = useQuery({
-    queryKey: ['designations'],
+    queryKey: ['designations', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('designations').select('id, title').order('title');
+      const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile!.company_id!).order('title');
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: managers = [] } = useQuery({
-    queryKey: ['managers'],
+    queryKey: ['managers', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('employees')
         .select('id, first_name, last_name, employee_code')
+        .eq('company_id', profile!.company_id!)
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('first_name');
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const createMutation = useMutation({
@@ -75,7 +79,7 @@ export default function NewEmployee() {
             company_id: profile?.company_id,
             department_id: payload.department_id || null,
             designation_id: payload.designation_id || null,
-            manager_id: payload.manager_id || null,
+            reporting_manager_id: payload.reporting_manager_id || null,
             date_of_birth: payload.date_of_birth || null,
             date_of_joining: payload.date_of_joining || null,
             personal_email: payload.personal_email || null,
@@ -227,7 +231,7 @@ export default function NewEmployee() {
             />
             <SelectField
               label="Reporting Manager"
-              name="manager_id"
+              name="reporting_manager_id"
               options={managers.map((m: any) => ({
                 value: m.id,
                 label: `${m.first_name} ${m.last_name}${m.employee_code ? ` (${m.employee_code})` : ''}`,

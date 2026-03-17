@@ -6,18 +6,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { GraduationCap, PlayCircle, Clock, BookOpen, Star } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 
 export default function Learning() {
+  const { profile } = useAuthStore();
+
   const { data: courses = [], isLoading: loadingCourses } = useQuery({
-    queryKey: ['courses'],
+    queryKey: ['courses', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase
         .from('courses')
         .select('*')
+        .eq('company_id', profile!.company_id!)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       return data || [];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: enrollments = [], isLoading: loadingEnrollments } = useQuery({

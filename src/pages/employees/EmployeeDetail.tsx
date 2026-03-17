@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { profile } = useAuthStore();
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [form, setForm] = useState<Partial<EmployeeRecord>>({});
@@ -77,19 +79,21 @@ export default function EmployeeDetail() {
   }, [employee]);
 
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments'],
+    queryKey: ['departments', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('departments').select('id, name').order('name');
+      const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile!.company_id!).order('name');
       return (data || []) as { id: string; name: string }[];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: designations = [] } = useQuery({
-    queryKey: ['designations'],
+    queryKey: ['designations', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('designations').select('id, title').order('title');
+      const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile!.company_id!).order('title');
       return (data || []) as { id: string; title: string }[];
     },
+    enabled: !!profile?.company_id,
   });
 
   const { data: leaveHistory = [] } = useQuery({
@@ -423,7 +427,7 @@ export default function EmployeeDetail() {
                 {attendanceRecords.map((rec: any) => (
                   <div key={rec.id} className="flex items-center justify-between py-3 text-sm">
                     <span className="text-primary">{rec.date}</span>
-                    <span className="text-muted-foreground">{rec.check_in || '—'} → {rec.check_out || '—'}</span>
+                    <span className="text-muted-foreground">{rec.clock_in ? new Date(rec.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'} → {rec.clock_out ? new Date(rec.clock_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span>
                     <Badge variant="outline" className="uppercase text-xs">
                       {rec.status || 'present'}
                     </Badge>

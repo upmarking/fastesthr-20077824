@@ -26,6 +26,8 @@ import HelpDesk from '@/pages/HelpDesk';
 import Announcements from '@/pages/Announcements';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
+import OfferView from '@/pages/recruitment/OfferView';
+
 
 import Companies from '@/pages/admin/Companies';
 import Subscriptions from '@/pages/admin/Subscriptions';
@@ -79,6 +81,8 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/offer/:token" element={<OfferView />} />
+
 
       {/* Core HR modules */}
       <Route path="/dashboard" element={withLayout(<Dashboard />)} />
@@ -92,6 +96,7 @@ function AppRoutes() {
       <Route path="/performance" element={withLayout(<Performance />)} />
       <Route path="/recruitment" element={withLayout(<Recruitment />)} />
       <Route path="/recruitment/new" element={withLayout(<NewJob />)} />
+      <Route path="/recruitment/edit/:id" element={withLayout(<NewJob />)} />
       <Route path="/learning" element={withLayout(<Learning />)} />
       <Route path="/helpdesk" element={withLayout(<HelpDesk />)} />
       <Route path="/announcements" element={withLayout(<Announcements />)} />
