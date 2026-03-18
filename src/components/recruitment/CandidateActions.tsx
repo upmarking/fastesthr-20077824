@@ -50,9 +50,10 @@ export function CandidateActions({
   const [candidate, setCandidate] = useState<{ full_name: string } | null>(null);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
-  const [existingOffer, setExistingOffer] = useState<{ joining_date: string, payout: number } | null>(null);
+  const [existingOffer, setExistingOffer] = useState<{ joining_date: string, payout: number, custom_variable_values?: Record<string, string> } | null>(null);
+  const [templateCustomVariables, setTemplateCustomVariables] = useState<any[]>([]);
 
-  const executeAutomations = async (newStage: string, offerData?: { joiningDate: string; payout: number }) => {
+  const executeAutomations = async (newStage: string, offerData?: { joiningDate: string; payout: number; customVariableValues?: Record<string, string> }) => {
     try {
       // Fetch job settings to get automations
       const { data: job, error } = await supabase
@@ -87,7 +88,7 @@ export function CandidateActions({
         const { data: template } = await supabase.from('offer_templates').select('*').eq('id', templateId).single();
         const { data: candidateInfo } = await supabase.from('candidates').select('full_name, email').eq('id', candidateId).single();
         const { data: jobInfo } = await supabase.from('jobs').select('title').eq('id', jobId).single();
-        const { data: companyInfo } = await supabase.from('companies').select('offer_sequence_prefix').eq('id', (job as any).company_id).single();
+        const { data: companyInfo } = await supabase.from('companies').select('offer_sequence_prefix, timezone').eq('id', (job as any).company_id).single();
         
         if (!template) {
           toast.error('Offer template not found. Please check your template configuration.');
@@ -100,6 +101,17 @@ export function CandidateActions({
         
         const rawHtml = template.html_content;
         
+        // Evaluate current_date variables
+        const timezone = companyInfo?.timezone || 'UTC';
+        const currentDateStr = new Date().toLocaleString('en-US', { timeZone: timezone, dateStyle: 'medium', timeStyle: 'short' });
+        
+        const finalCustomValues = { ...(offerData.customVariableValues || {}) };
+        templateCustomVariables.forEach(cv => {
+          if (cv.type === 'current_date') {
+            finalCustomValues[cv.key] = currentDateStr;
+          }
+        });
+        
         // 3. Generate and Upload PDF
         const pdfPath = await generateAndUploadOfferPDF({
           htmlContent: rawHtml,
@@ -111,7 +123,8 @@ export function CandidateActions({
           offerNumber: offerNumberStr,
           companyId: (job as any).company_id,
           candidateId: candidateId,
-          isPredefinedHtml: template.is_predefined_html
+          isPredefinedHtml: template.is_predefined_html,
+          customVariableValues: finalCustomValues
         });
 
         // 4. Get the final HTML string for inline preview
@@ -121,6 +134,7 @@ export function CandidateActions({
           joiningDate: offerData.joiningDate,
           payout: offerData.payout,
           offerNumber: offerNumberStr,
+          customVariableValues: finalCustomValues
         });
 
         toast.info('Sending offer letter email with attachment...');
@@ -130,7 +144,10 @@ export function CandidateActions({
             candidate_id: candidateId, 
             job_id: jobId, 
             company_id: (job as any).company_id,
-            offer_data: offerData,
+            offer_data: {
+              ...offerData,
+              custom_variable_values: finalCustomValues
+            },
             html_content: finalHtml,
             pdf_path: pdfPath,
             offer_number: offerNumberStr,
@@ -206,6 +223,19 @@ export function CandidateActions({
     const nextStage = pipelineStages[currentIndex + 1];
     
     if (nextStage === 'offer') {
+      // Fetch job settings to get automation template id
+      const { data: job } = await supabase.from('jobs').select('stage_automations').eq('id', jobId).single();
+      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      
+      if (templateId) {
+        const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
+        if (template?.custom_variables) {
+          setTemplateCustomVariables(template.custom_variables as any[]);
+        } else {
+          setTemplateCustomVariables([]);
+        }
+      }
+
       // Fetch candidate info for the dialog
       const { data } = await supabase.from('candidates').select('full_name').eq('id', candidateId).single();
       setCandidate(data);
@@ -216,7 +246,7 @@ export function CandidateActions({
     }
   };
 
-  const handleOfferConfirm = async (offerData: { joiningDate: string; payout: number }) => {
+  const handleOfferConfirm = async (offerData: { joiningDate: string; payout: number; customVariableValues: Record<string, string> }) => {
     setIsSubmittingOffer(true);
     try {
       await executeAutomations(pendingStage || currentStage, offerData);
@@ -244,9 +274,17 @@ export function CandidateActions({
       const { data: candData } = await supabase.from('candidates').select('full_name').eq('id', candidateId).single();
       setCandidate(candData);
 
+      // Fetch template variables
+      const { data: job } = await supabase.from('jobs').select('stage_automations').eq('id', jobId).single();
+      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      if (templateId) {
+        const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
+        setTemplateCustomVariables(template?.custom_variables as any[] || []);
+      }
+
       const { data: offerData } = await supabase
         .from('candidate_offers')
-        .select('joining_date, payout')
+        .select('joining_date, payout, custom_variable_values')
         .eq('candidate_id', candidateId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -256,6 +294,7 @@ export function CandidateActions({
         setExistingOffer({
           joining_date: offerData.joining_date || '',
           payout: offerData.payout || 0,
+          custom_variable_values: (offerData.custom_variable_values as Record<string, string>) || {}
         });
       }
       
@@ -343,6 +382,8 @@ export function CandidateActions({
         isSubmitting={isSubmittingOffer}
         defaultJoiningDate={existingOffer?.joining_date}
         defaultPayout={existingOffer?.payout}
+        defaultCustomVariableValues={existingOffer?.custom_variable_values}
+        customVariables={templateCustomVariables}
       />
       <EditScoreDialog
         isOpen={isScoreDialogOpen}

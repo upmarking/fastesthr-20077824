@@ -13,10 +13,17 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Loader2, Plus, Trash2, Edit2, FileText, ExternalLink, Eye, Mail } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit2, FileText, ExternalLink, Eye, Mail, Variable } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OfferLetterRenderer } from './OfferLetterRenderer';
+
+export interface CustomVariable {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'date' | 'current_date';
+  required: boolean;
+}
 
 interface OfferTemplate {
   id: string;
@@ -26,11 +33,12 @@ interface OfferTemplate {
   email_subject: string | null;
   email_body: string | null;
   is_predefined_html: boolean;
+  custom_variables: CustomVariable[];
   created_at: string;
 }
 
-const TEMPLATE_VARIABLES = ['{{Name}}', '{{Joined Date}}', '{{Payout}}', '{{Designation}}', '{{Offer Number}}'];
-const EMAIL_VARIABLES = ['{{candidate_name}}', '{{first_name}}', '{{job_title}}', '{{offer_number}}', '{{offer_link}}'];
+const BASE_TEMPLATE_VARIABLES = ['{{Name}}', '{{Joined Date}}', '{{Payout}}', '{{Designation}}', '{{Offer Number}}'];
+const BASE_EMAIL_VARIABLES = ['{{Name}}', '{{job_title}}', '{{offer_number}}', '{{offer_link}}'];
 
 function VariableButtons({ variables, onInsert }: { variables: string[], onInsert: (v: string) => void }) {
   return (
@@ -187,7 +195,12 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [isPredefinedHtml, setIsPredefinedHtml] = useState(false);
+  const [customVariables, setCustomVariables] = useState<CustomVariable[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Build dynamic variable lists by appending custom variables
+  const TEMPLATE_VARIABLES = [...BASE_TEMPLATE_VARIABLES, ...customVariables.map(v => `{{${v.key}}}`) ];
+  const EMAIL_VARIABLES = [...BASE_EMAIL_VARIABLES, ...customVariables.map(v => `{{${v.key}}}`) ];
 
   useEffect(() => {
     if (template) {
@@ -197,13 +210,15 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
       setEmailSubject(template.email_subject || '');
       setEmailBody(template.email_body || '');
       setIsPredefinedHtml(template.is_predefined_html || false);
+      setCustomVariables(Array.isArray((template as any).custom_variables) ? (template as any).custom_variables : []);
     } else {
       setName('');
       setHtmlContent('<h1>Offer Letter</h1>\n<p>Dear {{Name}},</p>\n<p>We are pleased to offer you the position of {{Designation}}...</p>\n<p>Joining Date: {{Joined Date}}</p>\n<p>Annual Payout: {{Payout}}</p>');
       setLetterheadUrl('');
       setEmailSubject('Offer of Employment — {{job_title}}');
-      setEmailBody('Dear {{candidate_name}},\n\nWe are excited to offer you the position of {{job_title}}!\n\nPlease find your official offer letter attached as a PDF.\n\nYou can also view and accept your offer online:\n{{offer_link}}\n\nBest regards,\nThe Hiring Team');
+      setEmailBody('Dear {{Name}},\n\nWe are excited to offer you the position of {{job_title}}!\n\nPlease find your official offer letter attached as a PDF.\n\nYou can also view and accept your offer online:\n{{offer_link}}\n\nBest regards,\nThe Hiring Team');
       setIsPredefinedHtml(false);
+      setCustomVariables([]);
     }
   }, [template, isOpen]);
 
@@ -223,6 +238,7 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
         email_subject: emailSubject || null,
         email_body: emailBody || null,
         is_predefined_html: isPredefinedHtml,
+        custom_variables: customVariables,
       };
 
       if (template) {
@@ -266,6 +282,9 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
             <TabsTrigger value="letter" className="gap-2">
               <Edit2 className="h-3.5 w-3.5" /> Offer Letter (PDF)
             </TabsTrigger>
+            <TabsTrigger value="variables" className="gap-2">
+              <Variable className="h-3.5 w-3.5" /> Variables
+            </TabsTrigger>
             <TabsTrigger value="preview" className="gap-2">
               <Eye className="h-3.5 w-3.5" /> Live Preview
             </TabsTrigger>
@@ -303,7 +322,7 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={10}
-                placeholder="Dear {{candidate_name}},&#10;&#10;We are excited to offer you..."
+                placeholder="Dear {{Name}},&#10;&#10;We are excited to offer you..."
                 className="flex w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none resize-y leading-relaxed"
               />
               <p className="text-[10px] text-muted-foreground italic">
@@ -360,6 +379,110 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
             </div>
           </TabsContent>
 
+          {/* ── Variables ── */}
+          <TabsContent value="variables" className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Custom Variables</label>
+                  <p className="text-[10px] text-muted-foreground">Define additional fields to collect when sending an offer. Use <code>{`{{Variable Name}}`}</code> in your email body or offer letter HTML.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setCustomVariables(prev => [...prev, { key: '', label: '', type: 'text', required: false }])}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Variable
+                </Button>
+              </div>
+            </div>
+
+            {customVariables.length === 0 && (
+              <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-border/50 rounded-lg bg-muted/5 text-muted-foreground">
+                <Variable className="h-8 w-8 mb-2 opacity-20" />
+                <p className="text-sm">No custom variables defined.</p>
+                <p className="text-[10px] mt-1">Click "Add Variable" to create additional input fields for the offer dialog.</p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {customVariables.map((cv, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-background/50">
+                  <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Variable Name</label>
+                        <Input
+                          value={cv.key}
+                          onChange={(e) => {
+                            const updated = [...customVariables];
+                            updated[idx] = { ...cv, key: e.target.value, label: e.target.value };
+                            setCustomVariables(updated);
+                          }}
+                          placeholder="e.g. Department"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Input Type</label>
+                        <select
+                          value={cv.type}
+                          onChange={(e) => {
+                            const updated = [...customVariables];
+                            const newType = e.target.value as 'text' | 'number' | 'date' | 'current_date';
+                            // If current_date, it's auto-filled so it doesn't need to be required from the user
+                            updated[idx] = { ...cv, type: newType, required: newType === 'current_date' ? false : cv.required };
+                            setCustomVariables(updated);
+                          }}
+                          className="flex h-8 w-full rounded-md border border-border/50 bg-background/50 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                        >
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="date">Date</option>
+                          <option value="current_date">Current Date (Auto-filled)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {cv.type !== 'current_date' ? (
+                        <>
+                          <input
+                            type="checkbox"
+                            id={`required-${idx}`}
+                            checked={cv.required}
+                            onChange={(e) => {
+                              const updated = [...customVariables];
+                              updated[idx] = { ...cv, required: e.target.checked };
+                              setCustomVariables(updated);
+                            }}
+                            className="w-3.5 h-3.5 text-primary bg-background border-border rounded focus:ring-primary"
+                          />
+                          <label htmlFor={`required-${idx}`} className="text-xs text-muted-foreground cursor-pointer">Required field</label>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Computed automatically when sent</span>
+                      )}
+                      {cv.key && (
+                        <span className="ml-auto text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20">
+                          {`{{${cv.key}}}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mt-5"
+                    onClick={() => setCustomVariables(prev => prev.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
           {/* ── Live Preview ── */}
           <TabsContent value="preview" className="py-2">
             <div className="bg-muted/10 rounded-xl p-8 border border-border/50 max-h-[60vh] overflow-auto flex justify-center">
@@ -369,12 +492,17 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
                   letterheadUrl={letterheadUrl}
                   variables={{
                     'Name': 'John Doe',
-                    'first_name': 'John',
                     'Designation': 'Senior Software Engineer',
                     'job_title': 'Senior Software Engineer',
                     'Joined Date': new Date().toLocaleDateString(),
                     'Payout': '$120,000.00',
-                    'Offer Number': 'OFFER-2026-0001'
+                    'Offer Number': 'OFFER-2026-0001',
+                    ...Object.fromEntries(customVariables.map(v => [
+                      v.key, 
+                      v.type === 'number' ? '12345' : 
+                      (v.type === 'date' || v.type === 'current_date') ? new Date().toLocaleDateString() : 
+                      `Sample ${v.key}`
+                    ])),
                   }}
                   isPredefinedHtml={isPredefinedHtml}
                 />

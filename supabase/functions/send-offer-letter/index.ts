@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
         offer_number: offer_number,
         joining_date: offer_data?.joiningDate,
         payout: offer_data?.payout,
+        custom_variable_values: offer_data?.custom_variable_values || {},
         html_content: html_content,
         pdf_url: pdf_path,
         is_predefined_html: is_predefined_html || false
@@ -119,12 +120,19 @@ Deno.serve(async (req) => {
     
     // Replace variables in template subject/body
     const replaceVars = (text: string) => {
-      return text
-        .replace(/\{\{candidate_name\}\}/g, candidate.full_name)
-        .replace(/\{\{first_name\}\}/g, candidate.full_name.split(' ')[0])
+      let result = text
+        .replace(/\{\{Name\}\}/g, candidate.full_name)
         .replace(/\{\{job_title\}\}/g, job.title)
         .replace(/\{\{offer_number\}\}/g, offer_number || '')
         .replace(/\{\{offer_link\}\}/g, publicUrl);
+
+      // Replace custom variables
+      if (offer_data?.custom_variable_values) {
+        for (const [key, value] of Object.entries(offer_data.custom_variable_values)) {
+          result = result.split(`{{${key}}}`).join(value as string);
+        }
+      }
+      return result;
     };
 
     const emailSubject = templateEmailSubject 

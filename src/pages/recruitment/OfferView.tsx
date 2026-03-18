@@ -49,7 +49,6 @@ export default function OfferView() {
     
     return {
       'Name': offer.candidates?.full_name || '',
-      'candidate_name': offer.candidates?.full_name || '',
       'Designation': offer.jobs?.title || '',
       'job_title': offer.jobs?.title || '',
       'Joined Date': joiningDate || '',

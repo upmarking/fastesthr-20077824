@@ -13,6 +13,7 @@ interface GenerateOfferParams {
   companyId: string;
   candidateId: string;
   isPredefinedHtml?: boolean;
+  customVariableValues?: Record<string, string>;
 }
 
 /**
@@ -35,16 +36,15 @@ function buildVariableMap(params: {
   joiningDate: string;
   payout: number;
   offerNumber: string;
+  customVariableValues?: Record<string, string>;
 }): Record<string, string> {
   const formattedPayout = params.payout.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
   });
 
-  return {
+  const baseMap: Record<string, string> = {
     '{{Name}}': params.candidateName,
-    '{{candidate_name}}': params.candidateName,
-    '{{first_name}}': params.candidateName.split(' ')[0],
     '{{Designation}}': params.jobTitle,
     '{{job_title}}': params.jobTitle,
     '{{Joined Date}}': params.joiningDate,
@@ -52,6 +52,15 @@ function buildVariableMap(params: {
     '{{Offer Number}}': params.offerNumber,
     '{{offer_number}}': params.offerNumber,
   };
+
+  // Merge custom variables into the map
+  if (params.customVariableValues) {
+    for (const [key, value] of Object.entries(params.customVariableValues)) {
+      baseMap[`{{${key}}}`] = value;
+    }
+  }
+
+  return baseMap;
 }
 
 /**
@@ -150,7 +159,7 @@ export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Pr
  */
 export function replaceHtmlVariables(
   htmlContent: string,
-  params: Omit<GenerateOfferParams, 'htmlContent' | 'companyId' | 'candidateId' | 'letterheadUrl'>
+  params: Omit<GenerateOfferParams, 'htmlContent' | 'companyId' | 'candidateId' | 'letterheadUrl' | 'isPredefinedHtml'>
 ): string {
   const vars = buildVariableMap(params);
   return substituteVariables(htmlContent, vars);
