@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Bell, Moon, Sun, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,12 +11,32 @@ import { useAuthStore } from '@/store/auth-store';
 import { useTheme } from '@/hooks/use-theme';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 
 export function Topbar() {
   const { profile, signOut } = useAuthStore();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
 
   const breadcrumbs = location.pathname
     .split('/')
@@ -54,12 +75,26 @@ export function Topbar() {
       <Button
         variant="outline"
         className="hidden h-9 w-64 justify-start gap-2 border-border bg-background/50 text-muted-foreground hover:border-primary/50 hover:text-foreground md:flex transition-all backdrop-blur-sm"
-        onClick={() => {/* TODO: command palette */}}
+        onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4" />
         <span className="text-sm">Search...</span>
         <kbd className="ml-auto rounded-md border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
       </Button>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput placeholder="Type a command or search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Quick Links">
+            <CommandItem onSelect={() => { setOpen(false); navigate('/dashboard'); }}>Dashboard</CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate('/employees'); }}>Employees</CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate('/recruitment'); }}>Recruitment</CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate('/payroll'); }}>Payroll</CommandItem>
+            <CommandItem onSelect={() => { setOpen(false); navigate('/settings'); }}>Settings</CommandItem>
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
 
       {/* Theme toggle */}
       <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggle}>
