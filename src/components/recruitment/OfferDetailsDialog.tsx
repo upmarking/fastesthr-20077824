@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Loader2, Calendar, DollarSign, Variable } from 'lucide-react';
+import { Loader2, Calendar, Banknote, Variable } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CustomVariable } from './OfferTemplateEditor';
 
@@ -82,7 +82,7 @@ export function OfferDetailsDialog({
   const getInputIcon = (type: string) => {
     switch (type) {
       case 'date': return <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />;
-      case 'number': return <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />;
+      case 'number': return <Banknote className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />;
       default: return <Variable className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -114,7 +114,7 @@ export function OfferDetailsDialog({
           <div className="space-y-2">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Annual Payout (CTC)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Banknote className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
                 type="number"
                 value={payout}

@@ -404,6 +404,16 @@ export default function NewJob() {
     enabled: !!profile?.company_id,
   });
 
+  const { data: companySettings } = useQuery({
+    queryKey: ['company-settings', profile?.company_id],
+    queryFn: async () => {
+      const { data } = await supabase.from('companies').select('currency').eq('id', profile!.company_id!).single();
+      return data;
+    },
+    enabled: !!profile?.company_id,
+  });
+  const currency = companySettings?.currency || 'USD';
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!profile?.company_id) {
@@ -677,7 +687,7 @@ export default function NewJob() {
           </CardHeader>
           <CardContent className="pt-6 grid sm:grid-cols-2 gap-4">
             <Field 
-              label="Min Salary ($)" 
+              label={`Min Salary (${currency})`}
               name="min_salary" 
               type="number" 
               placeholder="80000" 
@@ -685,7 +695,7 @@ export default function NewJob() {
               onChange={handleChange}
             />
             <Field 
-              label="Max Salary ($)" 
+              label={`Max Salary (${currency})`}
               name="max_salary" 
               type="number" 
               placeholder="120000" 

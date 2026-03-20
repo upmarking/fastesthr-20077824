@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Check, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
@@ -51,6 +52,8 @@ export default function Register() {
   });
 
   const password = watch('password', '');
+  const isPasswordValid = password ? passwordRules.every(r => r.test(password)) : false;
+  const isPasswordIncomplete = password.length > 0 && !isPasswordValid;
 
   const onSubmit = async (data: RegisterForm) => {
     setLoading(true);
@@ -124,16 +127,24 @@ export default function Register() {
         </div>
 
         {password && (
-          <div className="flex flex-wrap gap-2">
-            {passwordRules.map((rule) => {
-              const pass = rule.test(password);
-              return (
-                <span key={rule.label} className={`flex items-center gap-1 text-xs ${pass ? 'text-success' : 'text-muted-foreground'}`}>
-                  {pass ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                  {rule.label}
-                </span>
-              );
-            })}
+          <div className="rounded-lg border bg-card/50 p-4 shadow-sm transition-all duration-300 animate-in fade-in slide-in-from-top-2">
+            <p className="mb-3 text-sm font-medium flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              Password requirements
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {passwordRules.map((rule) => {
+                const pass = rule.test(password);
+                return (
+                  <div key={rule.label} className={`flex items-center gap-2 text-sm transition-all duration-300 ${pass ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors duration-300 ${pass ? 'border-emerald-500 bg-emerald-500/10' : 'border-muted-foreground/30 bg-muted/50'}`}>
+                      {pass ? <Check className="h-2.5 w-2.5 font-bold" /> : <X className="h-2.5 w-2.5 opacity-50" />}
+                    </div>
+                    <span>{rule.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -146,7 +157,7 @@ export default function Register() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Company Size</Label>
-            <Select onValueChange={(v) => setValue('companySize', v)}>
+            <Select value={watch('companySize')} onValueChange={(v) => setValue('companySize', v, { shouldValidate: true })}>
               <SelectTrigger><SelectValue placeholder="Select size" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="1-10">1-10</SelectItem>
@@ -160,7 +171,7 @@ export default function Register() {
           </div>
           <div className="space-y-2">
             <Label>Industry</Label>
-            <Select onValueChange={(v) => setValue('industry', v)}>
+            <Select value={watch('industry')} onValueChange={(v) => setValue('industry', v, { shouldValidate: true })}>
               <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="technology">Technology</SelectItem>
@@ -175,10 +186,27 @@ export default function Register() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Create Account
-        </Button>
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div tabIndex={0} className="w-full relative group">
+                <Button 
+                  type="submit" 
+                  className={`w-full transition-all duration-300 ${isPasswordIncomplete ? 'opacity-50 !cursor-not-allowed group-hover:scale-[1.01]' : 'hover:-translate-y-0.5'}`} 
+                  disabled={loading || isPasswordIncomplete}
+                >
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create Account
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {isPasswordIncomplete && (
+              <TooltipContent side="top" className="bg-destructive text-destructive-foreground border-destructive px-3 py-1.5 font-medium animate-in slide-in-from-bottom-2">
+                <p>Please meet all password requirements to create an account</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

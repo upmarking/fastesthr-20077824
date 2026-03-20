@@ -18,7 +18,7 @@ export default function OfferView() {
       try {
         const { data, error: fetchError } = await supabase
           .from('candidate_offers')
-          .select('*, companies(name, logo_url), candidates(full_name), jobs(title)')
+          .select('*, companies(name, logo_url, currency), candidates(full_name), jobs(title)')
           .eq('token', token)
           .single();
 
@@ -45,7 +45,7 @@ export default function OfferView() {
     if (!offer) return {};
     const joiningDate = offer.offer_data?.joiningDate || offer.joining_date;
     const payout = offer.offer_data?.payout || offer.payout;
-    const formattedPayout = payout?.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    const formattedPayout = payout?.toLocaleString('en-US', { style: 'currency', currency: offer.companies?.currency || 'USD' });
     
     return {
       'Name': offer.candidates?.full_name || '',

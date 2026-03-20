@@ -88,7 +88,7 @@ export function CandidateActions({
         const { data: template } = await supabase.from('offer_templates').select('*').eq('id', templateId).single();
         const { data: candidateInfo } = await supabase.from('candidates').select('full_name, email').eq('id', candidateId).single();
         const { data: jobInfo } = await supabase.from('jobs').select('title').eq('id', jobId).single();
-        const { data: companyInfo } = await supabase.from('companies').select('offer_sequence_prefix, timezone').eq('id', (job as any).company_id).single();
+        const { data: companyInfo } = await supabase.from('companies').select('offer_sequence_prefix, timezone, currency').eq('id', (job as any).company_id).single();
         
         if (!template) {
           toast.error('Offer template not found. Please check your template configuration.');
@@ -124,7 +124,8 @@ export function CandidateActions({
           companyId: (job as any).company_id,
           candidateId: candidateId,
           isPredefinedHtml: template.is_predefined_html,
-          customVariableValues: finalCustomValues
+          customVariableValues: finalCustomValues,
+          currency: companyInfo?.currency || 'USD'
         });
 
         // 4. Get the final HTML string for inline preview
@@ -134,7 +135,8 @@ export function CandidateActions({
           joiningDate: offerData.joiningDate,
           payout: offerData.payout,
           offerNumber: offerNumberStr,
-          customVariableValues: finalCustomValues
+          customVariableValues: finalCustomValues,
+          currency: companyInfo?.currency || 'USD'
         });
 
         toast.info('Sending offer letter email with attachment...');

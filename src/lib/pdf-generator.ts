@@ -14,6 +14,7 @@ interface GenerateOfferParams {
   candidateId: string;
   isPredefinedHtml?: boolean;
   customVariableValues?: Record<string, string>;
+  currency?: string;
 }
 
 /**
@@ -37,10 +38,11 @@ function buildVariableMap(params: {
   payout: number;
   offerNumber: string;
   customVariableValues?: Record<string, string>;
+  currency?: string;
 }): Record<string, string> {
   const formattedPayout = params.payout.toLocaleString('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: params.currency || 'USD',
   });
 
   const baseMap: Record<string, string> = {
@@ -114,7 +116,7 @@ function buildRawHtmlElement(html: string, letterheadUrl?: string | null): HTMLE
  * Main: generates a PDF blob from offer HTML, uploads it to Supabase Storage, returns the path.
  */
 export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Promise<string> {
-  const { htmlContent, letterheadUrl, companyId, candidateId, candidateName, isPredefinedHtml = false } = params;
+  const { htmlContent, letterheadUrl, companyId, candidateId, candidateName, isPredefinedHtml = false, currency } = params;
 
   // 1. Replace template variables
   const vars = buildVariableMap(params);
