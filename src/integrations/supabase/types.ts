@@ -236,6 +236,95 @@ export type Database = {
           },
         ]
       }
+      candidate_offers: {
+        Row: {
+          candidate_id: string
+          company_id: string
+          created_at: string
+          custom_variable_values: Json | null
+          expires_at: string | null
+          html_content: string
+          id: string
+          is_predefined_html: boolean | null
+          job_id: string
+          joining_date: string
+          offer_number: string
+          payout: number
+          pdf_url: string | null
+          status: string
+          template_id: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          company_id: string
+          created_at?: string
+          custom_variable_values?: Json | null
+          expires_at?: string | null
+          html_content: string
+          id?: string
+          is_predefined_html?: boolean | null
+          job_id: string
+          joining_date: string
+          offer_number: string
+          payout: number
+          pdf_url?: string | null
+          status?: string
+          template_id?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          company_id?: string
+          created_at?: string
+          custom_variable_values?: Json | null
+          expires_at?: string | null
+          html_content?: string
+          id?: string
+          is_predefined_html?: boolean | null
+          job_id?: string
+          joining_date?: string
+          offer_number?: string
+          payout?: number
+          pdf_url?: string | null
+          status?: string
+          template_id?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_offers_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_offers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_offers_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_offers_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "offer_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
           company_id: string
@@ -251,7 +340,7 @@ export type Database = {
           resume_url: string | null
           score: number | null
           source: string | null
-          stage: Database["public"]["Enums"]["candidate_stage"] | null
+          stage: string | null
           updated_at: string
         }
         Insert: {
@@ -268,7 +357,7 @@ export type Database = {
           resume_url?: string | null
           score?: number | null
           source?: string | null
-          stage?: Database["public"]["Enums"]["candidate_stage"] | null
+          stage?: string | null
           updated_at?: string
         }
         Update: {
@@ -285,7 +374,7 @@ export type Database = {
           resume_url?: string | null
           score?: number | null
           source?: string | null
-          stage?: Database["public"]["Enums"]["candidate_stage"] | null
+          stage?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -307,6 +396,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          compensation_structure: Json | null
           country: string | null
           created_at: string
           currency: string | null
@@ -314,18 +404,30 @@ export type Database = {
           id: string
           industry: string | null
           is_active: boolean | null
+          license_limit: number | null
           logo_url: string | null
           name: string
+          offer_sequence_current: number | null
+          offer_sequence_prefix: string | null
           plan: string | null
           plan_expires_at: string | null
+          price_per_license: number | null
           setup_completed: boolean | null
           size: string | null
           slug: string
+          smtp_from_email: string | null
+          smtp_from_name: string | null
+          smtp_host: string | null
+          smtp_pass: string | null
+          smtp_port: number | null
+          smtp_user: string | null
           timezone: string | null
           updated_at: string
+          wallet_balance: number | null
           work_days: string[] | null
         }
         Insert: {
+          compensation_structure?: Json | null
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -333,18 +435,30 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          license_limit?: number | null
           logo_url?: string | null
           name: string
+          offer_sequence_current?: number | null
+          offer_sequence_prefix?: string | null
           plan?: string | null
           plan_expires_at?: string | null
+          price_per_license?: number | null
           setup_completed?: boolean | null
           size?: string | null
           slug: string
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_pass?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
           timezone?: string | null
           updated_at?: string
+          wallet_balance?: number | null
           work_days?: string[] | null
         }
         Update: {
+          compensation_structure?: Json | null
           country?: string | null
           created_at?: string
           currency?: string | null
@@ -352,15 +466,26 @@ export type Database = {
           id?: string
           industry?: string | null
           is_active?: boolean | null
+          license_limit?: number | null
           logo_url?: string | null
           name?: string
+          offer_sequence_current?: number | null
+          offer_sequence_prefix?: string | null
           plan?: string | null
           plan_expires_at?: string | null
+          price_per_license?: number | null
           setup_completed?: boolean | null
           size?: string | null
           slug?: string
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_pass?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
           timezone?: string | null
           updated_at?: string
+          wallet_balance?: number | null
           work_days?: string[] | null
         }
         Relationships: []
@@ -589,6 +714,124 @@ export type Database = {
           },
         ]
       }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_amount: number | null
+          used_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_amount?: number | null
+          used_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_amount?: number | null
+          used_count?: number | null
+        }
+        Relationships: []
+      }
+      employee_exits: {
+        Row: {
+          assets_checklist: Json | null
+          assets_returned: boolean | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          exit_interview: boolean | null
+          exit_interview_answers: Json | null
+          id: string
+          last_working_day: string | null
+          reason: string | null
+          resignation_date: string | null
+          settlement_done: boolean | null
+          settlement_summary: Json | null
+          status: Database["public"]["Enums"]["exit_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          assets_checklist?: Json | null
+          assets_returned?: boolean | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          exit_interview?: boolean | null
+          exit_interview_answers?: Json | null
+          id?: string
+          last_working_day?: string | null
+          reason?: string | null
+          resignation_date?: string | null
+          settlement_done?: boolean | null
+          settlement_summary?: Json | null
+          status?: Database["public"]["Enums"]["exit_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          assets_checklist?: Json | null
+          assets_returned?: boolean | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          exit_interview?: boolean | null
+          exit_interview_answers?: Json | null
+          id?: string
+          last_working_day?: string | null
+          reason?: string | null
+          resignation_date?: string | null
+          settlement_done?: boolean | null
+          settlement_summary?: Json | null
+          status?: Database["public"]["Enums"]["exit_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_exits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_exits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_exits_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_shifts: {
         Row: {
           created_at: string
@@ -763,6 +1006,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_cards: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_redeemed: boolean | null
+          redeemed_at: string | null
+          redeemed_by: string | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_cards_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -998,9 +1282,11 @@ export type Database = {
           max_salary: number | null
           min_salary: number | null
           openings: number | null
+          pipeline_stages: Json | null
           posted_by: string | null
           published_at: string | null
           requirements: string | null
+          stage_automations: Json | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at: string
@@ -1019,9 +1305,11 @@ export type Database = {
           max_salary?: number | null
           min_salary?: number | null
           openings?: number | null
+          pipeline_stages?: Json | null
           posted_by?: string | null
           published_at?: string | null
           requirements?: string | null
+          stage_automations?: Json | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at?: string
@@ -1040,9 +1328,11 @@ export type Database = {
           max_salary?: number | null
           min_salary?: number | null
           openings?: number | null
+          pipeline_stages?: Json | null
           posted_by?: string | null
           published_at?: string | null
           requirements?: string | null
+          stage_automations?: Json | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string
@@ -1315,6 +1605,56 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_templates: {
+        Row: {
+          company_id: string
+          created_at: string
+          custom_variables: Json | null
+          email_body: string | null
+          email_subject: string | null
+          html_content: string
+          id: string
+          is_predefined_html: boolean | null
+          letterhead_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          custom_variables?: Json | null
+          email_body?: string | null
+          email_subject?: string | null
+          html_content: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          custom_variables?: Json | null
+          email_body?: string | null
+          email_subject?: string | null
+          html_content?: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -2100,19 +2440,107 @@ export type Database = {
           },
         ]
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      add_seats: {
+        Args: { p_company_id: string; p_seats: number; p_user_id: string }
+        Returns: Json
+      }
+      apply_discount_code: { Args: { p_code_id: string }; Returns: undefined }
+      extend_subscription: {
+        Args: { p_company_id: string; p_months: number; p_user_id: string }
+        Returns: Json
+      }
       get_user_company_id: { Args: never; Returns: string }
       get_user_employee_id: { Args: never; Returns: string }
       get_user_platform_role: {
         Args: never
         Returns: Database["public"]["Enums"]["platform_role"]
       }
+      increment_offer_sequence: {
+        Args: { p_company_id: string }
+        Returns: number
+      }
       is_company_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      redeem_gift_card: {
+        Args: { p_code: string; p_company_id: string; p_user_id: string }
+        Returns: Json
+      }
+      validate_discount_code: {
+        Args: { p_amount: number; p_code: string }
+        Returns: Json
+      }
+      wallet_credit: {
+        Args: {
+          p_amount: number
+          p_company_id: string
+          p_created_by?: string
+          p_description: string
+          p_razorpay_order_id?: string
+          p_razorpay_payment_id?: string
+        }
+        Returns: undefined
+      }
+      wallet_debit: {
+        Args: {
+          p_amount: number
+          p_company_id: string
+          p_created_by?: string
+          p_description: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       attendance_status:
@@ -2138,13 +2566,19 @@ export type Database = {
         | "resigned"
         | "terminated"
       employment_type: "full_time" | "part_time" | "contract" | "intern"
+      exit_status: "initiated" | "in_progress" | "completed"
       goal_status: "active" | "completed" | "missed" | "on_track" | "at_risk"
       interview_status: "scheduled" | "completed" | "cancelled"
       invitation_status: "pending" | "accepted" | "expired"
       job_status: "draft" | "open" | "paused" | "closed"
       leave_request_status: "pending" | "approved" | "rejected" | "cancelled"
       payroll_status: "draft" | "processing" | "review" | "finalized" | "paid"
-      platform_role: "super_admin" | "company_admin" | "user"
+      platform_role:
+        | "super_admin"
+        | "company_admin"
+        | "user"
+        | "hr_manager"
+        | "recruiter"
       review_status: "draft" | "active" | "completed"
       survey_status: "draft" | "active" | "closed"
       ticket_priority: "low" | "medium" | "high" | "urgent"
@@ -2307,13 +2741,20 @@ export const Constants = {
         "terminated",
       ],
       employment_type: ["full_time", "part_time", "contract", "intern"],
+      exit_status: ["initiated", "in_progress", "completed"],
       goal_status: ["active", "completed", "missed", "on_track", "at_risk"],
       interview_status: ["scheduled", "completed", "cancelled"],
       invitation_status: ["pending", "accepted", "expired"],
       job_status: ["draft", "open", "paused", "closed"],
       leave_request_status: ["pending", "approved", "rejected", "cancelled"],
       payroll_status: ["draft", "processing", "review", "finalized", "paid"],
-      platform_role: ["super_admin", "company_admin", "user"],
+      platform_role: [
+        "super_admin",
+        "company_admin",
+        "user",
+        "hr_manager",
+        "recruiter",
+      ],
       review_status: ["draft", "active", "completed"],
       survey_status: ["draft", "active", "closed"],
       ticket_priority: ["low", "medium", "high", "urgent"],
