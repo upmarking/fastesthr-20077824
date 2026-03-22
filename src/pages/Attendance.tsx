@@ -303,7 +303,7 @@ export default function Attendance() {
               <div className="flex justify-between items-center p-2 rounded border border-border/50 bg-background/50">
                 <span className="text-muted-foreground">Status</span>
                 <Badge variant="outline" className={statusColors[todayRecord?.status || ''] || 'border-muted text-muted-foreground'}>
-                  {todayRecord?.status === 'late' ? '⚠ Late' : isClockedIn ? 'Active' : isClockedOut ? 'Completed' : 'Pending'}
+                  {(todayRecord?.status as string) === 'late' ? '⚠ Late' : isClockedIn ? 'Active' : isClockedOut ? 'Completed' : 'Pending'}
                 </Badge>
               </div>
             </div>
