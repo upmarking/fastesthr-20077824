@@ -191,7 +191,7 @@ export default function ExitManagement() {
     if (val === 'interview' && selectedRecord) {
       const existingAnswers = selectedRecord.exit_interview_answers;
       if (existingAnswers && Array.isArray(existingAnswers) && existingAnswers.length > 0) {
-        setInterviewAnswers(existingAnswers);
+        setInterviewAnswers(existingAnswers as string[]);
       } else {
         setInterviewAnswers(['', '', '', '']);
       }

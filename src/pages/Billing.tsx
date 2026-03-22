@@ -215,12 +215,13 @@ export default function Billing() {
         p_amount: Number(creditAmount),
       });
       if (error) throw error;
-      if (data?.valid) {
-        setDiscountInfo(data);
-        toast.success(`Discount applied! Saving ₹${data.discount}`);
+      const result = data as any;
+      if (result?.valid) {
+        setDiscountInfo(result);
+        toast.success(`Discount applied! Saving ₹${result.discount}`);
       } else {
         setDiscountInfo(null);
-        toast.error(data?.error || 'Invalid discount code');
+        toast.error(result?.error || 'Invalid discount code');
       }
     } catch (err: any) {
       toast.error(err.message);
@@ -331,12 +332,13 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`Subscription extended by ${extendMonths} month(s)! New expiry: ${new Date(data.new_expiry).toLocaleDateString()}`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Subscription extended by ${extendMonths} month(s)! New expiry: ${new Date(result.new_expiry).toLocaleDateString()}`);
         setExtendSubOpen(false);
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to extend subscription');
+        toast.error(result?.error || 'Failed to extend subscription');
       }
     } catch (err: any) {
       toast.error(err.message);
@@ -356,13 +358,14 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`${newSeats} seat(s) added! Pro-rata charge: ${currencySymbol}${data.cost}`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`${newSeats} seat(s) added! Pro-rata charge: ${currencySymbol}${result.cost}`);
         setAddSeatsOpen(false);
         setNewSeats(1);
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to add seats');
+        toast.error(result?.error || 'Failed to add seats');
       }
     } catch (err: any) {
       toast.error(err.message);
@@ -386,13 +389,14 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`Gift card redeemed! ${currencySymbol}${data.amount} added to wallet.`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Gift card redeemed! ${currencySymbol}${result.amount} added to wallet.`);
         setGiftCardOpen(false);
         setGiftCardCode('');
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to redeem gift card');
+        toast.error(result?.error || 'Failed to redeem gift card');
       }
     } catch (err: any) {
       toast.error(err.message);

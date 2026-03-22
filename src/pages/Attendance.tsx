@@ -108,7 +108,7 @@ export default function Attendance() {
         .update({
           clock_out: clockOut.toISOString(),
           total_hours: parseFloat(totalHours.toFixed(2)),
-          status: (isEarlyLeave && todayRecord.status !== 'late' ? 'early_leave' : todayRecord.status) as any,
+          status: (isEarlyLeave ? 'early_leave' : todayRecord.status) as any,
         })
         .eq('id', todayRecord.id);
       if (error) throw error;
@@ -263,7 +263,7 @@ export default function Attendance() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
                 <span>{isClockedIn ? 'Active Session' : isClockedOut ? 'Session Complete' : 'Not Clocked In'}</span>
-                {todayRecord?.status === 'late' && (
+                {(todayRecord?.status as string) === 'late' && (
                   <Badge variant="outline" className="border-warning text-warning bg-warning/10 text-[10px] gap-1">
                     <AlertTriangle className="w-3 h-3" /> Late
                   </Badge>
@@ -303,7 +303,7 @@ export default function Attendance() {
               <div className="flex justify-between items-center p-2 rounded border border-border/50 bg-background/50">
                 <span className="text-muted-foreground">Status</span>
                 <Badge variant="outline" className={statusColors[todayRecord?.status || ''] || 'border-muted text-muted-foreground'}>
-                  {todayRecord?.status === 'late' ? '⚠ Late' : isClockedIn ? 'Active' : isClockedOut ? 'Completed' : 'Pending'}
+                  {(todayRecord?.status as string) === 'late' ? '⚠ Late' : isClockedIn ? 'Active' : isClockedOut ? 'Completed' : 'Pending'}
                 </Badge>
               </div>
             </div>

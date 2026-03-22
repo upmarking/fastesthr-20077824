@@ -32,6 +32,8 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
     phone: '',
     source: 'direct',
     score: '',

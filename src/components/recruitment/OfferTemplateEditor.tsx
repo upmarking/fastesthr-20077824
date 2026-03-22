@@ -86,7 +86,7 @@ export function OfferTemplateList() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as OfferTemplate[];
+      return data as unknown as OfferTemplate[];
     },
     enabled: !!profile?.company_id,
   });
@@ -272,14 +272,14 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
       if (template) {
         const { error } = await supabase
           .from('offer_templates')
-          .update(payload)
+          .update(payload as any)
           .eq('id', template.id);
         if (error) throw error;
         toast.success('Template updated');
       } else {
         const { error } = await supabase
           .from('offer_templates')
-          .insert(payload);
+          .insert(payload as any);
         if (error) throw error;
         toast.success('Template created');
       }
