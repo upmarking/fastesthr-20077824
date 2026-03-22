@@ -21,8 +21,10 @@ interface OfferDetailsDialogProps {
     joiningDate: string; 
     payout: number; 
     customVariableValues: Record<string, string>;
+    totalDuration?: number;
   }) => void;
   candidateName: string;
+  jobEmploymentType?: string;
   defaultJoiningDate?: string;
   defaultPayout?: number;
   defaultCustomVariableValues?: Record<string, string>;
@@ -39,10 +41,12 @@ export function OfferDetailsDialog({
   defaultPayout,
   defaultCustomVariableValues,
   customVariables = [],
-  isSubmitting = false
+  isSubmitting = false,
+  jobEmploymentType
 }: OfferDetailsDialogProps) {
   const [joiningDate, setJoiningDate] = useState('');
   const [payout, setPayout] = useState('');
+  const [totalDuration, setTotalDuration] = useState('');
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -76,6 +80,7 @@ export function OfferDetailsDialog({
       joiningDate,
       payout: parseFloat(payout),
       customVariableValues: customValues,
+      totalDuration: jobEmploymentType === 'intern' && totalDuration ? parseInt(totalDuration, 10) : undefined,
     });
   };
 
@@ -124,6 +129,22 @@ export function OfferDetailsDialog({
               />
             </div>
           </div>
+
+          {jobEmploymentType === 'intern' && (
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Duration (Days)</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  type="number"
+                  value={totalDuration}
+                  onChange={(e) => setTotalDuration(e.target.value)}
+                  placeholder="e.g. 90"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Custom Variable Fields */}
           {customVariables.filter(cv => cv.type !== 'current_date').length > 0 && (

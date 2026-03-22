@@ -52,8 +52,9 @@ export function CandidateActions({
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [existingOffer, setExistingOffer] = useState<{ joining_date: string, payout: number, custom_variable_values?: Record<string, string> } | null>(null);
   const [templateCustomVariables, setTemplateCustomVariables] = useState<any[]>([]);
+  const [jobEmploymentType, setJobEmploymentType] = useState<string | undefined>();
 
-  const executeAutomations = async (newStage: string, offerData?: { joiningDate: string; payout: number; customVariableValues?: Record<string, string> }) => {
+  const executeAutomations = async (newStage: string, offerData?: { joiningDate: string; payout: number; customVariableValues?: Record<string, string>; totalDuration?: number }) => {
     try {
       // Fetch job settings to get automations
       const { data: job, error } = await supabase
@@ -103,7 +104,7 @@ export function CandidateActions({
         
         // Evaluate current_date variables
         const timezone = companyInfo?.timezone || 'UTC';
-        const currentDateStr = new Date().toLocaleString('en-US', { timeZone: timezone, dateStyle: 'medium', timeStyle: 'short' });
+        const currentDateStr = new Date().toLocaleDateString('en-US', { timeZone: timezone, year: 'numeric', month: 'short', day: 'numeric' });
         
         const finalCustomValues = { ...(offerData.customVariableValues || {}) };
         templateCustomVariables.forEach(cv => {
@@ -111,6 +112,21 @@ export function CandidateActions({
             finalCustomValues[cv.key] = currentDateStr;
           }
         });
+
+        // Add Total Duration and calculate Last Date if applicable
+        if (offerData.totalDuration) {
+          finalCustomValues['Total Duration'] = offerData.totalDuration.toString();
+          const parts = offerData.joiningDate.split('-');
+          if (parts.length === 3) {
+            const startDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            startDate.setDate(startDate.getDate() + offerData.totalDuration);
+            finalCustomValues['Last Date'] = startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          } else {
+            const fallbackDate = new Date(offerData.joiningDate);
+            fallbackDate.setDate(fallbackDate.getDate() + offerData.totalDuration);
+            finalCustomValues['Last Date'] = isNaN(fallbackDate.getTime()) ? '' : fallbackDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          }
+        }
         
         // 3. Generate and Upload PDF (which also runs embedded scripts)
         const { pdfPath, manipulatedHtml: finalHtml } = await generateAndUploadOfferPDF({
@@ -216,9 +232,10 @@ export function CandidateActions({
     const nextStage = pipelineStages[currentIndex + 1];
     
     if (nextStage === 'offer') {
-      // Fetch job settings to get automation template id
-      const { data: job } = await supabase.from('jobs').select('stage_automations').eq('id', jobId).single();
+      // Fetch job settings to get automation template id and employment type
+      const { data: job } = await supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single();
       const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      setJobEmploymentType((job as any)?.employment_type);
       
       if (templateId) {
         const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
@@ -239,7 +256,7 @@ export function CandidateActions({
     }
   };
 
-  const handleOfferConfirm = async (offerData: { joiningDate: string; payout: number; customVariableValues: Record<string, string> }) => {
+  const handleOfferConfirm = async (offerData: { joiningDate: string; payout: number; customVariableValues: Record<string, string>; totalDuration?: number }) => {
     setIsSubmittingOffer(true);
     try {
       await executeAutomations(pendingStage || currentStage, offerData);
@@ -268,8 +285,9 @@ export function CandidateActions({
       setCandidate(candData);
 
       // Fetch template variables
-      const { data: job } = await supabase.from('jobs').select('stage_automations').eq('id', jobId).single();
+      const { data: job } = await supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single();
       const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      setJobEmploymentType((job as any)?.employment_type);
       if (templateId) {
         const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
         setTemplateCustomVariables(template?.custom_variables as any[] || []);
@@ -377,6 +395,7 @@ export function CandidateActions({
         defaultPayout={existingOffer?.payout}
         defaultCustomVariableValues={existingOffer?.custom_variable_values}
         customVariables={templateCustomVariables}
+        jobEmploymentType={jobEmploymentType}
       />
       <EditScoreDialog
         isOpen={isScoreDialogOpen}

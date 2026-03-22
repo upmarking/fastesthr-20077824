@@ -48,6 +48,19 @@ function substituteVariables(html: string, vars: Record<string, string>): string
 }
 
 /**
+ * Formats a YYYY-MM-DD date string to 'MMM D, YYYY' format (e.g. Jan 8, 2027).
+ */
+function formatDateString(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.trim().split('-');
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+  return dateStr;
+}
+
+/**
  * Builds the variable map from offer parameters.
  */
 function buildVariableMap(params: {
@@ -71,21 +84,24 @@ function buildVariableMap(params: {
     currency: params.currency || 'USD',
   });
 
+  const formattedJoiningDate = formatDateString(params.joiningDate);
+  const formattedToday = params.today || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
   const baseMap: Record<string, string> = {
     '{{Name}}': params.candidateName,
     '{{candidate_name}}': params.candidateName,
     '{{Designation}}': params.jobTitle,
     '{{job_title}}': params.jobTitle,
-    '{{Joined Date}}': params.joiningDate,
-    '{{joined_date}}': params.joiningDate,
+    '{{Joined Date}}': formattedJoiningDate,
+    '{{joined_date}}': formattedJoiningDate,
     '{{Payout}}': formattedPayout,
     '{{payout}}': formattedPayout,
     '{{Offer Number}}': params.offerNumber,
     '{{offer_number}}': params.offerNumber,
     '{{Offer Link}}': params.offerLink || '',
     '{{offer_link}}': params.offerLink || '',
-    '{{Today}}': params.today || new Date().toLocaleDateString(),
-    '{{today}}': params.today || new Date().toLocaleDateString(),
+    '{{Today}}': formattedToday,
+    '{{today}}': formattedToday,
   };
 
   // Merge compensation structure variables

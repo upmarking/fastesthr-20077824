@@ -132,6 +132,18 @@ Deno.serve(async (req) => {
     const origin = req.headers.get('origin') || company.website || 'http://localhost:8080';
     const publicUrl = `${origin}/offer/${savedOffer.token}`;
 
+    const formatDateString = (dateStr: string) => {
+      if (!dateStr) return '';
+      const parts = dateStr.trim().split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      }
+      return dateStr;
+    };
+    
+    const formattedJoiningDate = formatDateString(offer_data?.joiningDate);
+
     // Replace variables in template subject/body
     const replaceVars = (text: string) => {
       let result = text
@@ -139,7 +151,7 @@ Deno.serve(async (req) => {
         .replace(/\{\{Name\}\}/gi, candidate.full_name)
         .replace(/\{\{Designation\}\}/gi, job.title)
         .replace(/\{\{Offer Number\}\}/gi, offer_number || '')
-        .replace(/\{\{Joined Date\}\}/gi, offer_data?.joiningDate || '')
+        .replace(/\{\{Joined Date\}\}/gi, formattedJoiningDate || '')
         .replace(/\{\{Payout\}\}/gi, formattedPayout || '')
         .replace(/\{\{Offer Link\}\}/gi, publicUrl)
         .replace(/\{\{Today\}\}/gi, formattedDate)
@@ -219,7 +231,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Offer Letter Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
