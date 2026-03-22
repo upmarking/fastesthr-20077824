@@ -358,13 +358,14 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`${newSeats} seat(s) added! Pro-rata charge: ${currencySymbol}${data.cost}`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`${newSeats} seat(s) added! Pro-rata charge: ${currencySymbol}${result.cost}`);
         setAddSeatsOpen(false);
         setNewSeats(1);
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to add seats');
+        toast.error(result?.error || 'Failed to add seats');
       }
     } catch (err: any) {
       toast.error(err.message);
