@@ -332,12 +332,13 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`Subscription extended by ${extendMonths} month(s)! New expiry: ${new Date(data.new_expiry).toLocaleDateString()}`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Subscription extended by ${extendMonths} month(s)! New expiry: ${new Date(result.new_expiry).toLocaleDateString()}`);
         setExtendSubOpen(false);
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to extend subscription');
+        toast.error(result?.error || 'Failed to extend subscription');
       }
     } catch (err: any) {
       toast.error(err.message);
