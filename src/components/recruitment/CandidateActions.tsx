@@ -112,8 +112,8 @@ export function CandidateActions({
           }
         });
         
-        // 3. Generate and Upload PDF
-        const pdfPath = await generateAndUploadOfferPDF({
+        // 3. Generate and Upload PDF (which also runs embedded scripts)
+        const { pdfPath, manipulatedHtml: finalHtml } = await generateAndUploadOfferPDF({
           htmlContent: rawHtml,
           letterheadUrl: template.letterhead_url,
           candidateName: candidateInfo!.full_name,
@@ -124,19 +124,6 @@ export function CandidateActions({
           companyId: (job as any).company_id,
           candidateId: candidateId,
           isPredefinedHtml: template.is_predefined_html,
-          customVariableValues: finalCustomValues,
-          currency: companyInfo?.currency || 'USD',
-          today: currentDateStr,
-          compensationStructure: (companyInfo as any)?.compensation_structure || null
-        });
-
-        // 4. Get the final HTML string for inline preview
-        const finalHtml = replaceHtmlVariables(rawHtml, {
-          candidateName: candidateInfo!.full_name,
-          jobTitle: jobInfo!.title,
-          joiningDate: offerData.joiningDate,
-          payout: offerData.payout,
-          offerNumber: offerNumberStr,
           customVariableValues: finalCustomValues,
           currency: companyInfo?.currency || 'USD',
           today: currentDateStr,

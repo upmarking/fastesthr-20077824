@@ -39,6 +39,11 @@ function substituteVariables(html: string, vars: Record<string, string>): string
     const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
     result = result.replace(regex, value);
   }
+  
+  // Auto-fix for legacy template Javascript that incorrectly parses currency symbols
+  // Changes: .replace(/,/g, '')  ->  .replace(/[^0-9.-]/g, '')
+  result = result.replace(/\.replace\(\/\,\/g,\s*['"]['"]\)/g, ".replace(/[^0-9.-]/g, '')");
+  
   return result;
 }
 
@@ -111,7 +116,47 @@ function buildVariableMap(params: {
  */
 function buildPredefinedHtmlElement(html: string): HTMLElement {
   const el = document.createElement('div');
-  el.innerHTML = html;
+  // Enforce zero margins on the container itself
+  el.style.cssText = 'width: 210mm; margin: 0; padding: 0; border: none; background-color: white;';
+  
+  // A strict CSS reset applied ONLY to the very top elements.
+  // This removes the "upper padding" caused by browser default paragraph/heading margins
+  // while preserving the user's intended spacing between paragraphs inside the body.
+  el.innerHTML = `
+    <style>
+      /* Force the wrapper into a tight Flexbox column to obliterate any whitespace, line-breaks, or visual margins between pages */
+      #pdf-predefined-wrapper {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+      }
+      #pdf-predefined-wrapper > *:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+      #pdf-predefined-wrapper > *:first-child > *:first-child {
+        margin-top: 0 !important; 
+        padding-top: 0 !important;
+      }
+      /* Kill all external separation/margins on the pages themselves to guarantee mathematical canvas slicing alignment */
+      #pdf-predefined-wrapper .page {
+        margin: 0 !important;
+        border: none !important;
+        box-sizing: border-box !important;
+      }
+      /* Hide any stray <br> tags placed between pages */
+      #pdf-predefined-wrapper > br {
+        display: none !important;
+      }
+    </style>
+    <div id="pdf-predefined-wrapper">
+      ${html}
+    </div>
+  `;
+  
   return el;
 }
 
@@ -152,9 +197,9 @@ function buildRawHtmlElement(html: string, letterheadUrl?: string | null): HTMLE
 }
 
 /**
- * Main: generates a PDF blob from offer HTML, uploads it to Supabase Storage, returns the path.
+ * Main: generates a PDF blob from offer HTML, uploads it to Supabase Storage, returns the path and the final manipulated HTML.
  */
-export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Promise<string> {
+export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Promise<{ pdfPath: string, manipulatedHtml: string }> {
   const { htmlContent, letterheadUrl, companyId, candidateId, candidateName, isPredefinedHtml = false, currency } = params;
 
   // 1. Replace template variables
@@ -170,28 +215,86 @@ export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Pr
   const opt = {
     margin: (isPredefinedHtml ? [0, 0, 0, 0] : [10, 10, 10, 10]) as [number, number, number, number],
     filename: `Offer-${candidateName.replace(/\s+/g, '-')}.pdf`,
-    image: { type: 'jpeg' as const, quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+    image: { type: 'jpeg' as const, quality: 1 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      scrollY: 0,
+      scrollX: 0,
+      windowWidth: 794 // 210mm in pixels at 96 dpi to perfectly lock layout calculations.
+    },
+    jsPDF: isPredefinedHtml 
+      ? { unit: 'px' as const, format: [794, 1123] as [number, number], orientation: 'portrait' as const, hotfixes: ["px_scaling"] }
+      : { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+    pagebreak: isPredefinedHtml ? { mode: [] } : { mode: ['css', 'legacy'] }
   };
 
-  // 4. Generate PDF blob
-  const pdfBlob: Blob = await html2pdf().set(opt).from(pdfElement).output('blob');
+  // 4. Generate PDF blob safely to avoid scrollbar layout shifts during capture
+  let pdfBlob: Blob;
+  const originalOverflow = document.body.style.overflow;
+  try {
+    document.body.style.overflow = 'hidden';
 
-  // 5. Upload to Supabase Storage
-  const fileName = `${companyId}/${candidateId}_offer_${Date.now()}.pdf`;
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('offer_letters')
-    .upload(fileName, pdfBlob, {
-      contentType: 'application/pdf',
-      upsert: true,
-    });
+    // Must attach pdfElement temporarily to the actual document so `document.getElementById` works inside the template's scripts
+    pdfElement.style.position = 'absolute';
+    pdfElement.style.top = '-9999px';
+    pdfElement.style.left = '-9999px';
+    pdfElement.style.visibility = 'hidden';
+    document.body.appendChild(pdfElement);
 
-  if (uploadError) {
-    throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+    // Re-create and execute any <script> tags found in the template (innerHTML does not run them)
+    const scripts = Array.from(pdfElement.querySelectorAll('script'));
+    const executableScripts: HTMLScriptElement[] = [];
+
+    for (const oldScript of scripts) {
+      const newScript = document.createElement('script');
+      newScript.textContent = oldScript.textContent || '';
+      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+      oldScript.parentNode?.replaceChild(newScript, oldScript);
+      executableScripts.push(newScript);
+    }
+
+    // Wait a brief moment to allow the microtasks and synchronous JS (like CTC calculations) to update the DOM
+    if (scripts.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
+    // Capture the manipulated HTML *after* the scripts have run, so the email/database gets the calculated numbers
+    const manipulatedHtml = pdfElement.innerHTML;
+
+    // Remove the hiding styles so HTML2Canvas renders it correctly
+    pdfElement.style.position = '';
+    pdfElement.style.top = '';
+    pdfElement.style.left = '';
+    pdfElement.style.visibility = '';
+    if (document.body.contains(pdfElement)) {
+      document.body.removeChild(pdfElement);
+    }
+
+    // Now snap the PDF!
+    pdfBlob = await html2pdf().set(opt).from(pdfElement).output('blob');
+
+    // 5. Upload to Supabase Storage
+    const fileName = `${companyId}/${candidateId}_offer_${Date.now()}.pdf`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('offer_letters')
+      .upload(fileName, pdfBlob, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+    }
+
+    return { pdfPath: uploadData.path, manipulatedHtml };
+
+  } finally {
+    document.body.style.overflow = originalOverflow;
+    if (document.body.contains(pdfElement)) {
+      document.body.removeChild(pdfElement);
+    }
   }
-
-  return uploadData.path;
 }
 
 /**

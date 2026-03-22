@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import * as nodemailer from "https://esm.sh/nodemailer@6.9.8";
+import * as nodemailer from "npm:nodemailer@6.9.8";
+import { Buffer } from "node:buffer";
+
+// Polyfill Buffer for nodemailer running in Deno
+(globalThis as any).Buffer = Buffer;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -125,6 +129,9 @@ Deno.serve(async (req) => {
       currency: company.currency || 'USD' 
     });
     
+    const origin = req.headers.get('origin') || company.website || 'http://localhost:8080';
+    const publicUrl = `${origin}/offer/${savedOffer.token}`;
+
     // Replace variables in template subject/body
     const replaceVars = (text: string) => {
       let result = text

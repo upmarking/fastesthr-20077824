@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 
 interface OfferLetterRendererProps {
   htmlContent: string;
@@ -16,6 +16,8 @@ export function OfferLetterRenderer({
   isPredefinedHtml = false
 }: OfferLetterRendererProps) {
   
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const finalHtml = useMemo(() => {
     let content = htmlContent;
     Object.entries(variables).forEach(([key, value]) => {
@@ -25,6 +27,20 @@ export function OfferLetterRenderer({
     });
     return content;
   }, [htmlContent, variables]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    // Find all scripts inside the container and execute them
+    // dangerouslySetInnerHTML does not execute <script> tags by default
+    const scripts = Array.from(containerRef.current.querySelectorAll('script'));
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement('script');
+      newScript.textContent = oldScript.textContent || '';
+      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+      oldScript.parentNode?.replaceChild(newScript, oldScript);
+    });
+  }, [finalHtml]);
 
   return (
     <div className={`offer-letter-renderer ${className}`}>
@@ -40,6 +56,7 @@ export function OfferLetterRenderer({
         )}
         
         <div 
+          ref={containerRef}
           className={`content-area max-w-none dark:prose-invert ${isPredefinedHtml ? '' : 'p-12 sm:p-16 md:p-20 prose prose-slate'}`}
           dangerouslySetInnerHTML={{ __html: finalHtml }}
         />
