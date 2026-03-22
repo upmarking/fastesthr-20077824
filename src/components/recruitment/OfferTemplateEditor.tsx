@@ -279,7 +279,7 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
       } else {
         const { error } = await supabase
           .from('offer_templates')
-          .insert(payload);
+          .insert(payload as any);
         if (error) throw error;
         toast.success('Template created');
       }

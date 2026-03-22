@@ -108,7 +108,7 @@ export default function Attendance() {
         .update({
           clock_out: clockOut.toISOString(),
           total_hours: parseFloat(totalHours.toFixed(2)),
-          status: (isEarlyLeave && todayRecord.status !== 'late' ? 'early_leave' : todayRecord.status) as any,
+          status: (isEarlyLeave ? 'early_leave' : todayRecord.status) as any,
         })
         .eq('id', todayRecord.id);
       if (error) throw error;
