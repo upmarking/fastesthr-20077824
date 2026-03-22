@@ -272,7 +272,7 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
       if (template) {
         const { error } = await supabase
           .from('offer_templates')
-          .update(payload)
+          .update(payload as any)
           .eq('id', template.id);
         if (error) throw error;
         toast.success('Template updated');
