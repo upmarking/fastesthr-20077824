@@ -170,11 +170,11 @@ export default function EmployeeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee', id] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast.success('SYSTEM::EMPLOYEE_UPDATED');
+      toast.success('Employee updated successfully');
       setEditing(false);
     },
     onError: (err: any) => {
-      toast.error('ERROR::' + (err?.message || 'Update failed'));
+      toast.error(err?.message || 'Update failed');
     },
   });
 
@@ -201,11 +201,11 @@ export default function EmployeeDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['exits'] });
-      toast.success('SYSTEM::EMPLOYEE_TERMINATED');
+      toast.success('Employee terminated successfully');
       navigate('/employees');
     },
     onError: (err: any) => {
-      toast.error('ERROR::' + (err?.message || 'Failed to terminate'));
+      toast.error(err?.message || 'Failed to terminate');
     },
   });
 
@@ -226,9 +226,9 @@ export default function EmployeeDetail() {
 
   if (!employee) {
     return (
-      <div className="flex flex-col items-center gap-4 py-24">
+      <div className="flex flex-col items-center gap-4 py-24 animate-in fade-in zoom-in-95 duration-500">
         <AlertTriangle className="h-16 w-16 text-destructive/40" />
-        <p className="text-lg">EMPLOYEE_NOT_FOUND</p>
+        <p className="text-lg">Employee not found</p>
         <Button onClick={() => navigate('/employees')} variant="outline">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Employees
         </Button>
@@ -239,14 +239,14 @@ export default function EmployeeDetail() {
   const initials = `${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase();
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'profile', label: 'PROFILE' },
-    { id: 'attendance', label: 'ATTENDANCE' },
-    { id: 'leaves', label: 'LEAVE_HISTORY' },
-    { id: 'payroll', label: 'PAYROLL' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'attendance', label: 'Attendance' },
+    { id: 'leaves', label: 'Leave History' },
+    { id: 'payroll', label: 'Payroll' },
   ];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto animate-in fade-in duration-500 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button
@@ -272,15 +272,14 @@ export default function EmployeeDetail() {
         >
           {employee.status}
         </Badge>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {!editing ? (
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setEditing(true)}
-              className="border-border/50 hover:border-primary/50 transition-all"
+              className="transition-all shadow-sm hover:shadow-md bg-primary text-primary-foreground font-medium px-6 rounded-full"
             >
-              <Pencil className="h-4 w-4 mr-2" /> EDIT
+              <Pencil className="h-4 w-4 mr-2" /> Edit Profile
             </Button>
           ) : (
             <>
@@ -288,18 +287,18 @@ export default function EmployeeDetail() {
                 size="sm"
                 onClick={() => updateMutation.mutate(form)}
                 disabled={updateMutation.isPending}
-                className="font-mono"
+                className="font-medium bg-success hover:bg-success/90 text-success-foreground rounded-full px-6 shadow-sm"
               >
                 {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                SAVE
+                Save Changes
               </Button>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => { setForm({ ...employee }); setEditing(false); }}
-                className="font-mono"
+                className="font-medium rounded-full px-6"
               >
-                <X className="h-4 w-4 mr-2" /> DISCARD
+                <X className="h-4 w-4 mr-2" /> Cancel
               </Button>
             </>
           )}
@@ -307,7 +306,7 @@ export default function EmployeeDetail() {
       </div>
 
       {/* Profile Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden border-border/40 shadow-sm transition-all hover:shadow-md">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-6 items-start">
             <Avatar className="h-20 w-20 border-2 border-border/50">
@@ -316,7 +315,7 @@ export default function EmployeeDetail() {
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 grid sm:grid-cols-3 gap-4 text-sm">
+            <div className="flex-1 grid sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary/60" />
                 <span className="truncate">{employee.work_email}</span>
@@ -365,11 +364,11 @@ export default function EmployeeDetail() {
 
       {/* Profile tab */}
       {activeTab === 'profile' && (
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <CardTitle className="text-foreground font-semibold text-base">EDIT_PROFILE_INFORMATION</CardTitle>
+        <Card className="overflow-hidden border-border/40 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="border-b border-border/10 bg-muted/20 pb-4">
+            <CardTitle className="text-foreground font-medium text-base">Profile Information</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6 grid sm:grid-cols-2 gap-4">
+          <CardContent className="pt-6 grid sm:grid-cols-2 gap-x-12 gap-y-8">
             {([
               { label: 'First Name', name: 'first_name', required: true },
               { label: 'Last Name', name: 'last_name', required: true },
@@ -380,18 +379,23 @@ export default function EmployeeDetail() {
               { label: 'Date of Joining', name: 'date_of_joining', type: 'date' },
               { label: 'Date of Birth', name: 'date_of_birth', type: 'date' },
             ] as { label: string; name: keyof EmployeeRecord; type?: string; required?: boolean }[]).map(({ label, name, type = 'text', required }) => (
-              <div key={name as string} className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {label}{required && <span className="text-destructive ml-0.5">*</span>}
+              <div key={name as string} className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  {label}{required && editing && <span className="text-destructive">*</span>}
                 </label>
-                <Input
-                  type={type}
-                  name={name as string}
-                  value={(form[name] as string) || ''}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  className="bg-background/50 border-border/50 text-sm h-10 disabled:opacity-60"
-                />
+                {!editing ? (
+                  <p className="text-sm font-medium text-foreground py-1 border-b border-transparent">
+                    {employee[name] ? String(employee[name]) : <span className="text-muted-foreground italic font-normal">Not provided</span>}
+                  </p>
+                ) : (
+                  <Input
+                    type={type}
+                    name={name as string}
+                    value={(form[name] as string) || ''}
+                    onChange={handleChange}
+                    className="bg-background border-border/50 text-sm h-10 transition-colors focus:border-primary shadow-sm"
+                  />
+                )}
               </div>
             ))}
 
@@ -424,48 +428,65 @@ export default function EmployeeDetail() {
                   label: `${m.first_name} ${m.last_name}${m.employee_code ? ` (${m.employee_code})` : ''}`,
                 }))
               },
-            ] as { label: string; name: string; options: { value: string; label: string }[] }[]).map(({ label, name, options }) => (
-              <div key={name} className="space-y-1.5">
+            ] as { label: string; name: string; options: { value: string; label: string }[] }[]).map(({ label, name, options }) => {
+              const selectedOption = options.find(o => o.value === (employee as any)[name]);
+              return (
+              <div key={name} className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
-                <select
-                  name={name}
-                  value={(form as any)[name] || ''}
-                  onChange={handleChange}
-                  disabled={!editing}
-                  className="flex h-10 w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm text-foreground disabled:opacity-60 focus:border-primary focus:outline-none"
-                >
-                  <option value="">— Select —</option>
-                  {options.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                {!editing ? (
+                  <p className="text-sm font-medium text-foreground py-1 border-b border-transparent">
+                    {selectedOption ? selectedOption.label : <span className="text-muted-foreground italic font-normal">Not assigned</span>}
+                  </p>
+                ) : (
+                  <select
+                    name={name}
+                    value={(form as any)[name] || ''}
+                    onChange={handleChange}
+                    className="flex h-10 w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none transition-colors shadow-sm"
+                  >
+                    <option value="">— Select —</option>
+                    {options.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
-            ))}
+            )})}
           </CardContent>
         </Card>
       )}
 
       {/* Attendance tab */}
       {activeTab === 'attendance' && (
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <CardTitle className="text-foreground font-semibold text-base flex items-center gap-2">
-              <Clock className="h-4 w-4" /> ATTENDANCE_RECORDS
+        <Card className="overflow-hidden border-border/40 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="border-b border-border/10 bg-muted/20 pb-4">
+            <CardTitle className="text-foreground font-medium text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary/70" /> Attendance Records
             </CardTitle>
           </CardHeader>
           <CardContent>
             {attendanceRecords.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <Clock className="h-12 w-12 text-muted-foreground/30" />
-                <p className="text-muted-foreground mt-1">NO_ATTENDANCE_RECORDS_FOUND</p>
+              <div className="flex flex-col items-center gap-4 py-20 text-center animate-in fade-in duration-500">
+                <div className="h-16 w-16 rounded-full bg-muted/30 flex items-center justify-center">
+                  <Clock className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground">No attendance records found</p>
               </div>
             ) : (
-              <div className="divide-y divide-primary/10">
+              <div className="divide-y divide-border/30 pt-2">
                 {attendanceRecords.map((rec: any) => (
-                  <div key={rec.id} className="flex items-center justify-between py-3 text-sm">
-                    <span className="text-primary">{rec.date}</span>
-                    <span className="text-muted-foreground">{rec.clock_in ? new Date(rec.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'} → {rec.clock_out ? new Date(rec.clock_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}</span>
-                    <Badge variant="outline" className="uppercase text-xs">
+                  <div key={rec.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
+                    <span className="text-primary font-medium">{rec.date}</span>
+                    <span className="text-muted-foreground font-mono bg-muted/30 px-3 py-1 rounded-md">
+                      {rec.clock_in ? new Date(rec.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'} 
+                      <span className="mx-2 text-muted-foreground/50">→</span> 
+                      {rec.clock_out ? new Date(rec.clock_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}
+                    </span>
+                    <Badge variant="outline" className={`uppercase text-[10px] tracking-wider font-semibold ${
+                      rec.status === 'present' ? 'bg-success/10 text-success border-success/30' :
+                      rec.status === 'absent' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                      'bg-warning/10 text-warning border-warning/30'
+                    }`}>
                       {rec.status || 'present'}
                     </Badge>
                   </div>
@@ -478,34 +499,38 @@ export default function EmployeeDetail() {
 
       {/* Leave history tab */}
       {activeTab === 'leaves' && (
-        <Card className="overflow-hidden">
-          <CardHeader className="border-b border-border/50 pb-4">
-            <CardTitle className="text-foreground font-semibold text-base flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" /> LEAVE_HISTORY
+        <Card className="overflow-hidden border-border/40 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="border-b border-border/10 bg-muted/20 pb-4">
+            <CardTitle className="text-foreground font-medium text-base flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-primary/70" /> Leave History
             </CardTitle>
           </CardHeader>
           <CardContent>
             {leaveHistory.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <CalendarDays className="h-12 w-12 text-muted-foreground/30" />
-                <p className="text-muted-foreground mt-1">NO_LEAVE_RECORDS_FOUND</p>
+              <div className="flex flex-col items-center gap-4 py-20 text-center animate-in fade-in duration-500">
+                <div className="h-16 w-16 rounded-full bg-muted/30 flex items-center justify-center">
+                  <CalendarDays className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground">No leave records found</p>
               </div>
             ) : (
-              <div className="divide-y divide-primary/10">
+              <div className="divide-y divide-border/30 pt-2">
                 {leaveHistory.map((leave: any) => (
-                  <div key={leave.id} className="flex items-center justify-between py-3 text-sm">
+                  <div key={leave.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
                     <div>
-                      <p className="text-foreground">{leave.leave_type_id || 'Leave'}</p>
-                      <p className="text-muted-foreground text-xs">{leave.start_date} → {leave.end_date}</p>
+                      <p className="text-foreground font-medium">{leave.leave_type_id || 'Leave'}</p>
+                      <p className="text-muted-foreground text-xs mt-1 bg-muted/30 inline-flex px-2 py-0.5 rounded">
+                        {leave.start_date} <span className="mx-1 opacity-50">→</span> {leave.end_date}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-muted-foreground">{leave.total_days} days</span>
+                    <div className="flex items-center gap-6">
+                      <span className="text-muted-foreground font-medium">{leave.total_days} {leave.total_days === 1 ? 'day' : 'days'}</span>
                       <Badge
                         variant="outline"
-                        className={`font-mono uppercase text-xs ${
-                          leave.status === 'approved' ? 'border-success text-success' :
-                          leave.status === 'rejected' ? 'border-destructive text-destructive' :
-                          'border-warning text-warning'
+                        className={`uppercase text-[10px] tracking-wider font-semibold ${
+                          leave.status === 'approved' ? 'bg-success/10 text-success border-success/30' :
+                          leave.status === 'rejected' ? 'bg-destructive/10 text-destructive border-destructive/30' :
+                          'bg-warning/10 text-warning border-warning/30'
                         }`}
                       >
                         {leave.status}
@@ -521,22 +546,23 @@ export default function EmployeeDetail() {
 
       {/* Payroll tab */}
       {activeTab === 'payroll' && (
-        <Card className="overflow-hidden">
-          <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
-            <span className="text-4xl">💰</span>
-            <p className="text-muted-foreground mt-1">PAYROLL_MODULE::Navigate to Payroll section</p>
-            <Button variant="outline" onClick={() => navigate('/payroll')} className="mt-2 border-border/50 hover:border-primary/50 transition-all">
-              Go to Payroll
+        <Card className="overflow-hidden border-border/40 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <CardContent className="py-24 flex flex-col items-center gap-4 text-center">
+            <div className="text-5xl mb-2 hover:scale-110 transition-transform cursor-default">💰</div>
+            <h3 className="text-lg font-medium text-foreground">Payroll Management</h3>
+            <p className="text-muted-foreground max-w-sm">Manage employee compensation, generate payslips, and view payment history in the main Payroll section.</p>
+            <Button onClick={() => navigate('/payroll')} className="mt-4 shadow-sm hover:shadow-md transition-all group">
+              Go to Payroll <ArrowLeft className="ml-2 h-4 w-4 rotate-180 group-hover:translate-x-1 transition-transform" />
             </Button>
           </CardContent>
         </Card>
       )}
 
       {/* Danger Zone */}
-      <Card className="border-destructive/30 bg-destructive/5 backdrop-blur shadow-none">
+      <Card className="border-destructive/30 bg-destructive/5 backdrop-blur-sm shadow-none animate-in fade-in duration-500">
         <CardHeader className="pb-2">
-          <CardTitle className="text-destructive text-sm flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> DANGER_ZONE
+          <CardTitle className="text-destructive text-sm flex items-center gap-2 uppercase tracking-wider font-semibold">
+            <AlertTriangle className="h-4 w-4" /> Danger Zone
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-between py-4">
