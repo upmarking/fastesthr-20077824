@@ -203,9 +203,17 @@ export default function ApplyLeave() {
                   required
                 >
                   <option value="">— Select Leave Type —</option>
-                  {leaveTypes.map((lt: any) => (
-                    <option key={lt.id} value={lt.id}>{lt.name}</option>
-                  ))}
+                   {leaveTypes.length === 0 ? (
+                    <option value="" disabled>
+                      {profile?.platform_role === 'company_admin' 
+                        ? 'No leave types found. Please add them in Settings.' 
+                        : 'No leave types available. Contact your admin.'}
+                    </option>
+                  ) : (
+                    leaveTypes.map((lt: any) => (
+                      <option key={lt.id} value={lt.id}>{lt.name}</option>
+                    ))
+                  )}
                 </select>
               </div>
 

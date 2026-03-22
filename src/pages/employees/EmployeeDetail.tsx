@@ -59,6 +59,10 @@ export default function EmployeeDetail() {
   const [editing, setEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [form, setForm] = useState<Partial<EmployeeRecord>>({});
+  const [isNewDepartment, setIsNewDepartment] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [isNewDesignation, setIsNewDesignation] = useState(false);
+  const [newDesignationName, setNewDesignationName] = useState('');
 
   const { data: employee, isLoading } = useQuery<EmployeeRecord>({
     queryKey: ['employee', id],
@@ -79,7 +83,7 @@ export default function EmployeeDetail() {
     if (employee) setForm({ ...employee });
   }, [employee]);
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [], refetch: refetchDepartments } = useQuery({
     queryKey: ['departments', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile!.company_id!).order('name');
@@ -88,7 +92,7 @@ export default function EmployeeDetail() {
     enabled: !!profile?.company_id,
   });
 
-  const { data: designations = [] } = useQuery({
+  const { data: designations = [], refetch: refetchDesignations } = useQuery({
     queryKey: ['designations', profile?.company_id],
     queryFn: async () => {
       const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile!.company_id!).order('title');
@@ -142,6 +146,31 @@ export default function EmployeeDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<EmployeeRecord>) => {
+      let deptId = payload.department_id || null;
+      let desigId = payload.designation_id || null;
+
+      if (isNewDepartment && newDepartmentName.trim()) {
+        const { data: newDept, error } = await supabase
+          .from('departments')
+          .insert({ company_id: profile!.company_id!, name: newDepartmentName.trim() })
+          .select()
+          .single();
+        if (error) throw error;
+        deptId = newDept.id;
+        await refetchDepartments();
+      }
+
+      if (isNewDesignation && newDesignationName.trim()) {
+        const { data: newDesig, error } = await supabase
+          .from('designations')
+          .insert({ company_id: profile!.company_id!, title: newDesignationName.trim() })
+          .select()
+          .single();
+        if (error) throw error;
+        desigId = newDesig.id;
+        await refetchDesignations();
+      }
+
       const updateData = {
         first_name: payload.first_name,
         last_name: payload.last_name,
@@ -149,8 +178,8 @@ export default function EmployeeDetail() {
         personal_email: payload.personal_email || null,
         phone: payload.phone || null,
         employee_code: payload.employee_code || null,
-        department_id: payload.department_id || null,
-        designation_id: payload.designation_id || null,
+        department_id: deptId,
+        designation_id: desigId,
         reporting_manager_id: payload.reporting_manager_id || null,
         date_of_joining: payload.date_of_joining || null,
         date_of_birth: payload.date_of_birth || null,
@@ -211,7 +240,25 @@ export default function EmployeeDetail() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === 'department_id') {
+      if (value === 'ADD_NEW') {
+        setIsNewDepartment(true);
+        setForm((prev) => ({ ...prev, department_id: '' }));
+      } else {
+        setIsNewDepartment(false);
+        setForm((prev) => ({ ...prev, department_id: value }));
+      }
+    } else if (name === 'designation_id') {
+      if (value === 'ADD_NEW') {
+        setIsNewDesignation(true);
+        setForm((prev) => ({ ...prev, designation_id: '' }));
+      } else {
+        setIsNewDesignation(false);
+        setForm((prev) => ({ ...prev, designation_id: value }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   if (isLoading) {
@@ -295,7 +342,14 @@ export default function EmployeeDetail() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setForm({ ...employee }); setEditing(false); }}
+                onClick={() => { 
+                  setForm({ ...employee }); 
+                  setIsNewDepartment(false);
+                  setIsNewDesignation(false);
+                  setNewDepartmentName('');
+                  setNewDesignationName('');
+                  setEditing(false); 
+                }}
                 className="font-medium rounded-full px-6"
               >
                 <X className="h-4 w-4 mr-2" /> Cancel
@@ -430,6 +484,13 @@ export default function EmployeeDetail() {
               },
             ] as { label: string; name: string; options: { value: string; label: string }[] }[]).map(({ label, name, options }) => {
               const selectedOption = options.find(o => o.value === (employee as any)[name]);
+              const isDepartment = name === 'department_id';
+              const isDesignation = name === 'designation_id';
+              const addingNew = (isDepartment && isNewDepartment) || (isDesignation && isNewDesignation);
+              
+              let selectValue = (form as any)[name] || '';
+              if (addingNew) selectValue = 'ADD_NEW';
+
               return (
               <div key={name} className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
@@ -438,17 +499,40 @@ export default function EmployeeDetail() {
                     {selectedOption ? selectedOption.label : <span className="text-muted-foreground italic font-normal">Not assigned</span>}
                   </p>
                 ) : (
-                  <select
-                    name={name}
-                    value={(form as any)[name] || ''}
-                    onChange={handleChange}
-                    className="flex h-10 w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none transition-colors shadow-sm"
-                  >
-                    <option value="">— Select —</option>
-                    {options.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
+                  <div className="space-y-2">
+                    <select
+                      name={name}
+                      value={selectValue}
+                      onChange={handleChange}
+                      className="flex h-10 w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none transition-colors shadow-sm"
+                    >
+                      <option value="">— Select —</option>
+                      {options.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                      {(isDepartment || isDesignation) && (
+                        <option value="ADD_NEW" className="font-semibold text-primary">+ Add New {label}</option>
+                      )}
+                    </select>
+                    {isDepartment && isNewDepartment && (
+                      <Input
+                        type="text"
+                        placeholder="e.g. Engineering"
+                        value={newDepartmentName}
+                        onChange={(e) => setNewDepartmentName(e.target.value)}
+                        className="bg-background border-border/50 text-sm h-10 transition-colors focus:border-primary shadow-sm"
+                      />
+                    )}
+                    {isDesignation && isNewDesignation && (
+                      <Input
+                        type="text"
+                        placeholder="e.g. Senior Developer"
+                        value={newDesignationName}
+                        onChange={(e) => setNewDesignationName(e.target.value)}
+                        className="bg-background border-border/50 text-sm h-10 transition-colors focus:border-primary shadow-sm"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             )})}

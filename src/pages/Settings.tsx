@@ -89,6 +89,7 @@ export default function Settings() {
     { id: 'schedule', label: 'Work Schedule', icon: Clock },
     { id: 'payroll', label: 'Payroll Config', icon: DollarSign },
     { id: 'roles', label: 'Roles & Access', icon: Shield },
+    { id: 'leaves', label: 'Leave Types', icon: Calendar },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'email_docs', label: 'Email & Documents', icon: Mail },
     { id: 'security', label: 'Security & SSO', icon: KeyIcon },
@@ -130,6 +131,7 @@ export default function Settings() {
               {activeTab === 'payroll' && "Configure tax slabs, salary components, and bonus types."}
               {activeTab === 'roles' && "Manage user roles and access permissions."}
               {activeTab === 'email_docs' && "Configure SMTP for outgoing emails."}
+              {activeTab === 'leaves' && "Define leave categories and annual quotas."}
               {activeTab === 'notifications' && "Configure notification preferences."}
               {activeTab === 'security' && "Security and single sign-on settings."}
               {activeTab === 'integrations' && "Third-party integrations and API keys."}
@@ -148,6 +150,8 @@ export default function Settings() {
               <RolesTab companyId={profile?.company_id} />
             ) : activeTab === 'email_docs' ? (
               <EmailDocsTab form={form} setForm={setForm} handleTestSmtp={handleTestSmtp} isTestingSmtp={isTestingSmtp} />
+            ) : activeTab === 'leaves' ? (
+              <LeaveTypesTab companyId={profile?.company_id} />
             ) : activeTab === 'notifications' ? (
               <NotificationsTab />
             ) : activeTab === 'security' ? (
@@ -471,6 +475,209 @@ function EmailDocsTab({ form, setForm, handleTestSmtp, isTestingSmtp }: any) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ======== LEAVE TYPES TAB ========
+function LeaveTypesTab({ companyId }: { companyId?: string | null }) {
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingType, setEditingType] = useState<any>(null);
+  const [form, setForm] = useState({ 
+    name: '', code: '', max_days_per_year: '12', color: '#4F46E5', is_active: true, carry_forward: false, requires_document: false 
+  });
+
+  const { data: leaveTypes = [], isLoading } = useQuery({
+    queryKey: ['leave-types', companyId],
+    queryFn: async () => { 
+      const { data } = await supabase.from('leave_types').select('*').eq('company_id', companyId!).order('name'); 
+      return data || []; 
+    },
+    enabled: !!companyId,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!form.name.trim()) throw new Error('Name required');
+      const payload = { 
+        company_id: companyId!, 
+        name: form.name, 
+        code: form.code || null, 
+        max_days_per_year: parseFloat(form.max_days_per_year) || 0, 
+        color: form.color,
+        is_active: form.is_active,
+        carry_forward: form.carry_forward,
+        requires_document: form.requires_document
+      };
+      
+      if (editingType) {
+        const { error } = await supabase.from('leave_types').update(payload).eq('id', editingType.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('leave_types').insert([payload]);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leave-types'] }); 
+      toast.success(editingType ? 'Leave type updated' : 'Leave type created'); 
+      setDialogOpen(false); 
+      resetForm();
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => { 
+      const { error } = await supabase.from('leave_types').delete().eq('id', id); 
+      if (error) throw error; 
+    },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ['leave-types'] }); 
+      toast.success('Leave type deleted'); 
+    },
+    onError: (e: any) => toast.error(e?.message || 'Failed. It might be in use.'),
+  });
+
+  const resetForm = () => {
+    setForm({ name: '', code: '', max_days_per_year: '12', color: '#4F46E5', is_active: true, carry_forward: false, requires_document: false });
+    setEditingType(null);
+  };
+
+  const handleEdit = (lt: any) => {
+    setEditingType(lt);
+    setForm({ 
+      name: lt.name, 
+      code: lt.code || '', 
+      max_days_per_year: lt.max_days_per_year?.toString() || '0', 
+      color: lt.color || '#4F46E5',
+      is_active: lt.is_active,
+      carry_forward: lt.carry_forward,
+      requires_document: lt.requires_document
+    });
+    setDialogOpen(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-foreground">Leave Categories</h3>
+          <p className="text-xs text-muted-foreground">Configure different types of leaves and their annual limits</p>
+        </div>
+        <Button size="sm" className="gap-1 border border-primary/20" onClick={() => { resetForm(); setDialogOpen(true); }}>
+          <Plus className="w-3.5 h-3.5" /> Add New Type
+        </Button>
+      </div>
+
+      {isLoading ? <Skeleton className="h-32 w-full" /> : leaveTypes.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-border/50 rounded-xl bg-muted/5">
+          <Calendar className="w-10 h-10 mx-auto mb-3 opacity-20 text-primary" />
+          <p className="text-sm font-medium">No leave types defined</p>
+          <p className="text-xs text-muted-foreground mt-1 mb-4">You need to add at least one leave type to allow employees to apply</p>
+          <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>Create Standard Leaves</Button>
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {leaveTypes.map((lt: any) => (
+            <div key={lt.id} className="group relative flex items-center justify-between p-4 rounded-xl border border-border/50 bg-background/40 hover:bg-background/60 hover:border-primary/30 transition-all duration-200 shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold shadow-sm transition-transform group-hover:scale-105" style={{ backgroundColor: lt.color }}>
+                  {lt.code || lt.name[0]}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{lt.name}</p>
+                    {!lt.is_active && <Badge variant="secondary" className="text-[9px] h-4 py-0">Inactive</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{lt.max_days_per_year} days/year • {lt.carry_forward ? 'Carry forward' : 'Use it or lose it'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => handleEdit(lt)}>
+                  <Settings2 className="w-3.5 h-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(lt.id)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md bg-card border-border/50">
+          <DialogHeader>
+            <DialogTitle>{editingType ? 'Edit Leave Type' : 'Add Leave Type'}</DialogTitle>
+            <DialogDescription>Define the name, quota and behavior for this leave category</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</Label>
+                <Input placeholder="e.g. Sick Leave" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} className="bg-background/50 border-border/50 focus:border-primary/50" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Short Code</Label>
+                <Input placeholder="e.g. SL" value={form.code} onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))} className="bg-background/50 border-border/50 focus:border-primary/50" />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Days per Year</Label>
+                <Input type="number" value={form.max_days_per_year} onChange={(e) => setForm(f => ({ ...f, max_days_per_year: e.target.value }))} className="bg-background/50 border-border/50 focus:border-primary/50" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pick a Color</Label>
+                <div className="flex gap-2 items-center h-10 px-3 rounded-md border border-border/50 bg-background/50">
+                  <input type="color" value={form.color} onChange={(e) => setForm(f => ({ ...f, color: e.target.value }))} className="w-6 h-6 rounded border-none bg-transparent cursor-pointer" />
+                  <span className="text-xs font-mono text-muted-foreground">{form.color}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Active</Label>
+                  <p className="text-[10px] text-muted-foreground">Visible to employees for application</p>
+                </div>
+                <button onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))} className={`w-10 h-5 rounded-full transition-all relative ${form.is_active ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.is_active ? 'left-5' : 'left-0.5'}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Carry Forward</Label>
+                  <p className="text-[10px] text-muted-foreground">Allow unused days to transfer to next year</p>
+                </div>
+                <button onClick={() => setForm(f => ({ ...f, carry_forward: !f.carry_forward }))} className={`w-10 h-5 rounded-full transition-all relative ${form.carry_forward ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.carry_forward ? 'left-5' : 'left-0.5'}`} />
+                </button>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Requires Document</Label>
+                  <p className="text-[10px] text-muted-foreground">Employees must upload medical or support docs</p>
+                </div>
+                <button onClick={() => setForm(f => ({ ...f, requires_document: !f.requires_document }))} className={`w-10 h-5 rounded-full transition-all relative ${form.requires_document ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.requires_document ? 'left-5' : 'left-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setDialogOpen(false)} className="text-muted-foreground hover:text-foreground">Cancel</Button>
+            <Button onClick={() => mutation.mutate()} disabled={mutation.isPending} className="px-8 shadow-md shadow-primary/20">
+              {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {editingType ? 'Save Changes' : 'Create Type'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function Reports() {
     queryFn: async () => {
       const { data } = await supabase
         .from('employees')
-        .select('id, department_id, employment_type, status, gender')
+        .select('id, first_name, last_name, work_email, phone, department_id, designation_id, employment_type, status, gender, date_of_joining')
         .eq('company_id', profile!.company_id!)
         .is('deleted_at', null);
       return data || [];
@@ -47,6 +47,56 @@ export default function Reports() {
     return acc;
   }, {});
 
+  const handleExport = () => {
+    try {
+      if (!employees || employees.length === 0) return;
+
+      const headers = [
+        'Employee ID', 
+        'First Name', 
+        'Last Name', 
+        'Email', 
+        'Phone', 
+        'Department', 
+        'Employment Type', 
+        'Status', 
+        'Gender',
+        'Date of Joining'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...employees.map((emp: any) => {
+          const deptName = departments.find((d: any) => d.id === emp.department_id)?.name || 'N/A';
+          return [
+            emp.id,
+            `"${emp.first_name || ''}"`,
+            `"${emp.last_name || ''}"`,
+            `"${emp.work_email || ''}"`,
+            `"${emp.phone || ''}"`,
+            `"${deptName}"`,
+            emp.employment_type || 'N/A',
+            emp.status || 'N/A',
+            emp.gender || 'N/A',
+            emp.date_of_joining || 'N/A'
+          ].join(',');
+        })
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `employees_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
   const isLoading = loadingDepts || loadingEmps;
 
   return (
@@ -60,7 +110,7 @@ export default function Reports() {
           <Button variant="outline" className="gap-2 border-border/50 text-muted-foreground hover:text-primary">
             <Filter className="h-4 w-4" /> Filter
           </Button>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" /> Export
           </Button>
         </div>
