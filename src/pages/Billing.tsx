@@ -215,12 +215,13 @@ export default function Billing() {
         p_amount: Number(creditAmount),
       });
       if (error) throw error;
-      if (data?.valid) {
-        setDiscountInfo(data);
-        toast.success(`Discount applied! Saving ₹${data.discount}`);
+      const result = data as any;
+      if (result?.valid) {
+        setDiscountInfo(result);
+        toast.success(`Discount applied! Saving ₹${result.discount}`);
       } else {
         setDiscountInfo(null);
-        toast.error(data?.error || 'Invalid discount code');
+        toast.error(result?.error || 'Invalid discount code');
       }
     } catch (err: any) {
       toast.error(err.message);
