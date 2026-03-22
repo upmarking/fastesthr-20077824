@@ -389,13 +389,14 @@ export default function Billing() {
         p_user_id: user!.id,
       });
       if (error) throw error;
-      if (data?.success) {
-        toast.success(`Gift card redeemed! ${currencySymbol}${data.amount} added to wallet.`);
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Gift card redeemed! ${currencySymbol}${result.amount} added to wallet.`);
         setGiftCardOpen(false);
         setGiftCardCode('');
         refreshAll();
       } else {
-        toast.error(data?.error || 'Failed to redeem gift card');
+        toast.error(result?.error || 'Failed to redeem gift card');
       }
     } catch (err: any) {
       toast.error(err.message);
