@@ -86,7 +86,8 @@ export default function EmployeeDetail() {
   const { data: departments = [], refetch: refetchDepartments } = useQuery({
     queryKey: ['departments', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile!.company_id!).order('name');
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile.company_id).order('name');
       return (data || []) as { id: string; name: string }[];
     },
     enabled: !!profile?.company_id,
@@ -95,7 +96,8 @@ export default function EmployeeDetail() {
   const { data: designations = [], refetch: refetchDesignations } = useQuery({
     queryKey: ['designations', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile!.company_id!).order('title');
+      if (!profile?.company_id) return [];
+      const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile.company_id).order('title');
       return (data || []) as { id: string; title: string }[];
     },
     enabled: !!profile?.company_id,
@@ -104,10 +106,11 @@ export default function EmployeeDetail() {
   const { data: managers = [] } = useQuery({
     queryKey: ['managers', profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id) return [];
       const { data } = await supabase
         .from('employees')
         .select('id, first_name, last_name, employee_code')
-        .eq('company_id', profile!.company_id!)
+        .eq('company_id', profile.company_id)
         .eq('status', 'active')
         .is('deleted_at', null)
         .order('first_name');
@@ -146,13 +149,15 @@ export default function EmployeeDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<EmployeeRecord>) => {
+      if (!profile?.company_id) throw new Error('Company ID is required');
+
       let deptId = payload.department_id || null;
       let desigId = payload.designation_id || null;
 
       if (isNewDepartment && newDepartmentName.trim()) {
         const { data: newDept, error } = await supabase
           .from('departments')
-          .insert({ company_id: profile!.company_id!, name: newDepartmentName.trim() })
+          .insert({ company_id: profile.company_id, name: newDepartmentName.trim() })
           .select()
           .single();
         if (error) throw error;
@@ -163,7 +168,7 @@ export default function EmployeeDetail() {
       if (isNewDesignation && newDesignationName.trim()) {
         const { data: newDesig, error } = await supabase
           .from('designations')
-          .insert({ company_id: profile!.company_id!, title: newDesignationName.trim() })
+          .insert({ company_id: profile.company_id, title: newDesignationName.trim() })
           .select()
           .single();
         if (error) throw error;
@@ -209,6 +214,8 @@ export default function EmployeeDetail() {
 
   const terminateMutation = useMutation({
     mutationFn: async () => {
+      if (!profile?.company_id) throw new Error('Company ID is required');
+
       const { error: empError } = await supabase
         .from('employees')
         .update({ status: 'terminated', deleted_at: new Date().toISOString() })
@@ -218,7 +225,7 @@ export default function EmployeeDetail() {
       const { error: exitError } = await supabase
         .from('employee_exits')
         .insert({
-          company_id: profile!.company_id!,
+          company_id: profile.company_id,
           employee_id: id!,
           status: 'initiated',
           reason: 'Terminated by company',
