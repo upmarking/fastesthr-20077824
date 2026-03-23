@@ -78,8 +78,8 @@ export default function Register() {
 
       toast.success('Account created! Please check your email to verify.');
       navigate('/login');
-    } catch (err: any) {
-      toast.error(err.message || 'Registration failed');
+    } catch (err: unknown) {
+      toast.error((err instanceof Error ? err.message : String(err)) || 'Registration failed');
     } finally {
       setLoading(false);
     }

@@ -77,9 +77,9 @@ export default function Settings() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success('Test email sent!', { id: toastId });
-    } catch (err: any) {
-      let msg = err.message || 'Unknown error';
-      if (err.context && typeof err.context.json === 'function') { try { const b = await err.context.json(); if (b.error) msg = b.error; } catch {} }
+    } catch (err: unknown) {
+      let msg = (err instanceof Error ? err.message : String(err)) || 'Unknown error';
+      if (err && typeof err === 'object' && 'context' in err && (err as any).context && typeof (err as any).context.json === 'function') { try { const b = await (err as any).context.json(); if (b.error) msg = b.error; } catch {} }
       toast.error(`SMTP Test Failed: ${msg}`, { id: toastId });
     } finally { setIsTestingSmtp(false); }
   };
