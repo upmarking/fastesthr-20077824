@@ -146,13 +146,15 @@ export default function EmployeeDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<EmployeeRecord>) => {
+      if (!profile?.company_id) throw new Error('Company profile not found');
+
       let deptId = payload.department_id || null;
       let desigId = payload.designation_id || null;
 
       if (isNewDepartment && newDepartmentName.trim()) {
         const { data: newDept, error } = await supabase
           .from('departments')
-          .insert({ company_id: profile!.company_id!, name: newDepartmentName.trim() })
+          .insert({ company_id: profile.company_id, name: newDepartmentName.trim() })
           .select()
           .single();
         if (error) throw error;
@@ -163,7 +165,7 @@ export default function EmployeeDetail() {
       if (isNewDesignation && newDesignationName.trim()) {
         const { data: newDesig, error } = await supabase
           .from('designations')
-          .insert({ company_id: profile!.company_id!, title: newDesignationName.trim() })
+          .insert({ company_id: profile.company_id, title: newDesignationName.trim() })
           .select()
           .single();
         if (error) throw error;
