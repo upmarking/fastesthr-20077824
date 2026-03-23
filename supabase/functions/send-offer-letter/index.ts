@@ -5,12 +5,24 @@ import { Buffer } from "node:buffer";
 // Polyfill Buffer for nodemailer running in Deno
 (globalThis as any).Buffer = Buffer;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const allowedOrigins = [
+  "https://fastesthre.com",
+  "http://localhost:8080"
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin");
+  const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : "https://fastesthre.com";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin as string,
+    "Access-Control-Allow-Headers": 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

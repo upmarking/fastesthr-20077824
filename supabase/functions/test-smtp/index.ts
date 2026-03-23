@@ -1,11 +1,22 @@
 import * as nodemailer from "https://esm.sh/nodemailer@6.9.8";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const allowedOrigins = [
+  "https://fastesthre.com",
+  "http://localhost:8080"
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin");
+  const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : "https://fastesthre.com";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin as string,
+    "Access-Control-Allow-Headers": 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   console.log("Incoming request:", req.method);
 
   if (req.method === 'OPTIONS') {

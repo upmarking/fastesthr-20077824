@@ -1,19 +1,31 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const allowedOrigins = [
+  "https://fastesthre.com",
+  "http://localhost:8080"
+];
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin");
+  const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : "https://fastesthre.com";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin as string,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function jsonResponse(body: Record<string, unknown>, headers: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,7 +33,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      return jsonResponse({ error: "Unauthorized" }, corsHeaders, 401);
     }
 
     const supabase = createClient(
@@ -33,7 +45,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
+      return jsonResponse({ error: "Unauthorized" }, corsHeaders, 401);
     }
     const userId = userData.user.id;
 
@@ -45,7 +57,7 @@ Deno.serve(async (req) => {
       const { amount, currency = "INR", company_id, discount_code } = body;
 
       if (!amount || amount <= 0) {
-        return jsonResponse({ error: "Invalid amount" }, 400);
+        return jsonResponse({ error: "Invalid amount" }, corsHeaders, 400);
       }
 
       let finalAmount = amount;
@@ -59,14 +71,14 @@ Deno.serve(async (req) => {
           { p_code: discount_code, p_amount: amount }
         );
         if (discErr) {
-          return jsonResponse({ error: discErr.message }, 400);
+          return jsonResponse({ error: discErr.message }, corsHeaders, 400);
         }
         if (discountData?.valid) {
           discountAmount = discountData.discount;
           discountCodeId = discountData.code_id;
           finalAmount = Math.max(0, amount - discountAmount);
         } else {
-          return jsonResponse({ error: discountData?.error || "Invalid discount code" }, 400);
+          return jsonResponse({ error: discountData?.error || "Invalid discount code" }, corsHeaders, 400);
         }
       }
 
@@ -84,7 +96,7 @@ Deno.serve(async (req) => {
         if (discountCodeId) {
           await supabase.rpc("apply_discount_code", { p_code_id: discountCodeId });
         }
-        return jsonResponse({ success: true, free: true, credited: amount });
+        return jsonResponse({ success: true, free: true, credited: amount }, corsHeaders);
       }
 
       // Create Razorpay order
@@ -92,7 +104,7 @@ Deno.serve(async (req) => {
       const keySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
 
       if (!keyId || !keySecret) {
-        return jsonResponse({ error: "Razorpay not configured" }, 500);
+        return jsonResponse({ error: "Razorpay not configured" }, corsHeaders, 500);
       }
 
       const rzpRes = await fetch("https://api.razorpay.com/v1/orders", {
@@ -120,6 +132,7 @@ Deno.serve(async (req) => {
       if (!rzpRes.ok) {
         return jsonResponse(
           { error: rzpData.error?.description || "Failed to create Razorpay order" },
+          corsHeaders,
           400
         );
       }
@@ -143,7 +156,7 @@ Deno.serve(async (req) => {
         discount_code_id: discountCodeId,
         discount_amount: discountAmount,
         original_amount: amount,
-      });
+      }, corsHeaders);
     }
 
     // ─── VERIFY PAYMENT ────────────────────────────────────────
@@ -158,7 +171,7 @@ Deno.serve(async (req) => {
       } = body;
 
       if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-        return jsonResponse({ error: "Missing payment details" }, 400);
+        return jsonResponse({ error: "Missing payment details" }, corsHeaders, 400);
       }
 
       // Verify signature using HMAC-SHA256
@@ -187,7 +200,7 @@ Deno.serve(async (req) => {
           .update({ status: "failed" })
           .eq("razorpay_order_id", razorpay_order_id);
 
-        return jsonResponse({ error: "Invalid payment signature" }, 400);
+        return jsonResponse({ error: "Invalid payment signature" }, corsHeaders, 400);
       }
 
       // Credit wallet
@@ -237,12 +250,12 @@ Deno.serve(async (req) => {
           .eq("status", "pending");
       }
 
-      return jsonResponse({ success: true, credited: creditAmount });
+      return jsonResponse({ success: true, credited: creditAmount }, corsHeaders);
     }
 
-    return jsonResponse({ error: "Invalid action" }, 400);
+    return jsonResponse({ error: "Invalid action" }, corsHeaders, 400);
   } catch (err) {
     console.error("Edge function error:", err);
-    return jsonResponse({ error: err.message || "Internal server error" }, 500);
+    return jsonResponse({ error: err.message || "Internal server error" }, corsHeaders, 500);
   }
 });
