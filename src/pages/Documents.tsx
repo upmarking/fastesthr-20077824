@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Download, Trash2, Search, Plus, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
-import { useState } from 'react';
+import { FileText, Upload, Download, Trash2, Search, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Document {
   id: string;
@@ -21,6 +22,7 @@ interface Document {
   uploadedAt: string;
   size: string;
   expiresAt?: string;
+  filePath?: string;
 }
 
 const categories = [
@@ -34,21 +36,58 @@ export default function Documents() {
   const { profile } = useAuthStore();
   const isAdmin = profile?.platform_role === 'company_admin' || profile?.platform_role === 'super_admin' || profile?.platform_role === 'hr_manager';
 
-  const [documents, setDocuments] = useState<Document[]>([
-    { id: '1', name: 'Employee Handbook 2026', category: 'hr_policies', description: 'Complete employee handbook with all company policies', uploadedBy: 'HR Admin', uploadedAt: '2026-01-15', size: '2.4 MB' },
-    { id: '2', name: 'Non-Disclosure Agreement', category: 'contracts', description: 'Standard NDA template for new hires', uploadedBy: 'Legal Team', uploadedAt: '2026-02-10', size: '540 KB', expiresAt: '2027-02-10' },
-    { id: '3', name: 'Remote Work Policy', category: 'hr_policies', description: 'Guidelines for remote and hybrid work arrangements', uploadedBy: 'HR Admin', uploadedAt: '2026-03-01', size: '1.1 MB' },
-    { id: '4', name: 'Leave Policy Document', category: 'hr_policies', description: 'Comprehensive leave policy including types and accrual', uploadedBy: 'HR Admin', uploadedAt: '2026-01-20', size: '890 KB' },
-    { id: '5', name: 'Offer Letter Template', category: 'templates', description: 'Standard offer letter template with variables', uploadedBy: 'HR Admin', uploadedAt: '2026-02-05', size: '320 KB' },
-    { id: '6', name: 'Code of Conduct', category: 'hr_policies', description: 'Company code of conduct and ethics guidelines', uploadedBy: 'HR Admin', uploadedAt: '2026-01-10', size: '1.5 MB' },
-    { id: '7', name: 'IT Security Agreement', category: 'contracts', description: 'Data security and usage agreement for all employees', uploadedBy: 'IT Admin', uploadedAt: '2025-06-01', size: '1.0 MB', expiresAt: '2026-03-15' },
-    { id: '8', name: 'Tax Declaration Form', category: 'employee_docs', description: 'Annual tax declaration form template', uploadedBy: 'Finance', uploadedAt: '2026-01-05', size: '410 KB', expiresAt: '2026-04-15' },
-  ]);
-
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category: 'hr_policies', description: '', expiresAt: '' });
+  const [file, setFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [profile?.company_id]);
+
+  const fetchDocuments = async () => {
+    if (!profile?.company_id) return;
+    try {
+      const { data, error } = await supabase
+        .from('company_documents')
+        .select(`
+          id, name, category, description, file_path, size, expires_at, created_at,
+          profiles:created_by ( full_name )
+        `)
+        .eq('company_id', profile.company_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const formatted = (data || []).map(d => ({
+        id: d.id,
+        name: d.name,
+        category: d.category,
+        description: d.description || '',
+        uploadedBy: d.profiles?.full_name || 'System',
+        uploadedAt: new Date(d.created_at).toISOString().split('T')[0],
+        size: formatSize(d.size),
+        expiresAt: d.expires_at ? new Date(d.expires_at).toISOString().split('T')[0] : undefined,
+        filePath: d.file_path
+      }));
+      setDocuments(formatted);
+    } catch (err: any) {
+      toast.error('Failed to load documents');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const filteredDocs = documents.filter(doc => {
     const matchSearch = doc.name.toLowerCase().includes(search.toLowerCase());
@@ -68,27 +107,106 @@ export default function Documents() {
 
   const expiringCount = documents.filter(d => { const s = getExpiryStatus(d.expiresAt); return s && (s.label.includes('Expired') || s.label.includes('Expires in')); }).length;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.name.trim()) { toast.error('Document name is required'); return; }
-    const newDoc: Document = {
-      id: Date.now().toString(),
-      name: form.name,
-      category: form.category,
-      description: form.description,
-      uploadedBy: profile?.full_name || 'User',
-      uploadedAt: new Date().toISOString().split('T')[0],
-      size: 'Pending upload',
-      expiresAt: form.expiresAt || undefined,
-    };
-    setDocuments(prev => [newDoc, ...prev]);
-    toast.success('Document added');
-    setDialogOpen(false);
-    setForm({ name: '', category: 'hr_policies', description: '', expiresAt: '' });
+    if (!file) { toast.error('Please select a file to upload'); return; }
+    if (!profile?.company_id) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.company_id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase
+        .from('company_documents')
+        .insert({
+          company_id: profile.company_id,
+          name: form.name,
+          category: form.category,
+          description: form.description,
+          file_path: fileName,
+          size: file.size,
+          expires_at: form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
+          created_by: profile.id
+        });
+
+      if (dbError) {
+        // Rollback upload
+        await supabase.storage.from('documents').remove([fileName]);
+        throw dbError;
+      }
+
+      toast.success('Document uploaded successfully');
+      setDialogOpen(false);
+      setForm({ name: '', category: 'hr_policies', description: '', expiresAt: '' });
+      setFile(null);
+      fetchDocuments();
+    } catch (err: any) {
+      toast.error('Failed to upload document: ' + err.message);
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
-    toast.success('Document removed');
+  const handleDelete = async (doc: Document) => {
+    if (!doc.filePath || !confirm('Are you sure you want to delete this document?')) return;
+    try {
+      // 1. Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([doc.filePath]);
+        
+      if (storageError) throw storageError;
+
+      // 2. Delete from DB
+      const { error: dbError } = await supabase
+        .from('company_documents')
+        .delete()
+        .eq('id', doc.id);
+
+      if (dbError) throw dbError;
+
+      toast.success('Document removed');
+      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+    } catch (err: any) {
+      toast.error('Failed to delete document');
+      console.error(err);
+    }
+  };
+
+  const handleDownload = async (doc: Document) => {
+    if (!doc.filePath) return;
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .download(doc.filePath);
+        
+      if (error) throw error;
+      
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      // Extract original file extension from filePath if possible, or just use name
+      const ext = doc.filePath.split('.').pop() || '';
+      const downloadName = doc.name.endsWith(`.${ext}`) ? doc.name : `${doc.name}.${ext}`;
+      
+      a.download = downloadName.replace(/\s+/g, '_').toLowerCase();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`Downloading ${doc.name}...`);
+    } catch (err: any) {
+      toast.error('Failed to download document');
+      console.error(err);
+    }
   };
 
   return (
@@ -135,15 +253,33 @@ export default function Documents() {
                   <Label>Expiry Date (optional)</Label>
                   <Input type="date" value={form.expiresAt} onChange={(e) => setForm(f => ({ ...f, expiresAt: e.target.value }))} />
                 </div>
-                <div className="border-2 border-dashed border-border/50 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Drag & drop or click to upload</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, XLSX up to 10MB</p>
+                <div className="relative border-2 border-dashed border-border/50 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                  {file ? (
+                    <div className="flex flex-col items-center justify-center pointer-events-none">
+                      <FileText className="w-8 h-8 text-primary/60 mx-auto mb-2" />
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="pointer-events-none">
+                      <Upload className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Drag & drop or click to upload</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, XLSX up to 10MB</p>
+                    </div>
+                  )}
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleCreate}>Upload Document</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={uploading}>Cancel</Button>
+                <Button onClick={handleCreate} disabled={uploading}>{uploading ? 'Uploading...' : 'Upload Document'}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -186,7 +322,13 @@ export default function Documents() {
           ))}
         </TabsList>
         <TabsContent value={activeTab} className="mt-4">
-          {filteredDocs.length === 0 ? (
+          {loading ? (
+            <Card>
+              <CardContent className="flex justify-center items-center py-12">
+                <p className="text-sm text-muted-foreground">Loading documents...</p>
+              </CardContent>
+            </Card>
+          ) : filteredDocs.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-2 py-12">
                 <FolderOpen className="h-12 w-12 text-muted-foreground/30" />
@@ -224,11 +366,11 @@ export default function Documents() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => handleDownload(doc)}>
                         <Download className="w-4 h-4" />
                       </Button>
                       {isAdmin && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(doc.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(doc)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
