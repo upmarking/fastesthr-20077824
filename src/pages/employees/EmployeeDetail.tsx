@@ -209,6 +209,8 @@ export default function EmployeeDetail() {
 
   const terminateMutation = useMutation({
     mutationFn: async () => {
+      if (!profile?.company_id) throw new Error('Company profile not found');
+
       const { error: empError } = await supabase
         .from('employees')
         .update({ status: 'terminated', deleted_at: new Date().toISOString() })
@@ -218,7 +220,7 @@ export default function EmployeeDetail() {
       const { error: exitError } = await supabase
         .from('employee_exits')
         .insert({
-          company_id: profile!.company_id!,
+          company_id: profile.company_id,
           employee_id: id!,
           status: 'initiated',
           reason: 'Terminated by company',
