@@ -223,8 +223,8 @@ export default function Billing() {
         setDiscountInfo(null);
         toast.error(result?.error || 'Invalid discount code');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
       setDiscountInfo(null);
     } finally {
       setIsValidatingDiscount(false);
@@ -312,8 +312,8 @@ export default function Billing() {
         setIsProcessingPayment(false);
       });
       rzp.open();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsProcessingPayment(false);
     }
@@ -340,8 +340,8 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to extend subscription');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsExtending(false);
     }
@@ -367,8 +367,8 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to add seats');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsAddingSeats(false);
     }
@@ -398,8 +398,8 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to redeem gift card');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsRedeemingGift(false);
     }
