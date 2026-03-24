@@ -113,8 +113,9 @@ export default function Performance() {
   const createCycleMutation = useMutation({
     mutationFn: async () => {
       if (!cycleForm.name.trim()) throw new Error('Name is required');
+      if (!profile?.company_id) throw new Error('Company ID is required');
       const { error } = await supabase.from('review_cycles').insert([{
-        company_id: profile!.company_id!,
+        company_id: profile.company_id,
         name: cycleForm.name,
         start_date: cycleForm.start_date,
         end_date: cycleForm.end_date,
