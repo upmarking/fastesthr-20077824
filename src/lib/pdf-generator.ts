@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-// @ts-ignore
 import html2pdf from 'html2pdf.js';
 
 interface CompensationStructure {
