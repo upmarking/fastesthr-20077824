@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Network, ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 interface OrgNode {
   id: string;
@@ -107,7 +107,8 @@ function OrgNodeCard({ node, level = 0 }: { node: OrgNode; level?: number }) {
 }
 
 export function EmployeeOrgChart({ employees }: { employees: any[] }) {
-  const orgTree = buildOrgTree(employees);
+  // ⚡ Bolt: Memoize tree construction to prevent expensive N-node mapping on every render
+  const orgTree = useMemo(() => buildOrgTree(employees), [employees]);
 
   if (orgTree.length === 0) {
     return (
