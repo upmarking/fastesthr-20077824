@@ -39,7 +39,8 @@ export default function Performance() {
   const { data: employee } = useQuery({
     queryKey: ['my-employee', profile?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('employees').select('id, company_id').eq('user_id', profile!.id).is('deleted_at', null).maybeSingle();
+      if (!profile?.id) return null;
+      const { data } = await supabase.from('employees').select('id, company_id').eq('user_id', profile.id).is('deleted_at', null).maybeSingle();
       return data;
     },
     enabled: !!profile?.id,
@@ -48,10 +49,11 @@ export default function Performance() {
   const { data: goals = [], isLoading: loadingGoals } = useQuery({
     queryKey: ['goals', profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id) return [];
       const { data } = await supabase
         .from('goals')
         .select('*, employees(first_name, last_name)')
-        .eq('company_id', profile!.company_id!)
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false })
         .limit(30);
       return data || [];
