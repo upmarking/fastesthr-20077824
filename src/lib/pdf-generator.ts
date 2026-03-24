@@ -30,6 +30,18 @@ interface GenerateOfferParams {
 }
 
 /**
+ * Escapes HTML characters to prevent XSS.
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
  * Replaces template variables in HTML content with actual values.
  */
 function substituteVariables(html: string, vars: Record<string, string>): string {
@@ -37,7 +49,9 @@ function substituteVariables(html: string, vars: Record<string, string>): string
   for (const [key, value] of Object.entries(vars)) {
     // Support case-insensitive replacement for base variables
     const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    result = result.replace(regex, value);
+    // Escape the value to prevent XSS from user inputs (e.g., candidate name, custom vars)
+    const safeValue = escapeHtml(String(value));
+    result = result.replace(regex, safeValue);
   }
   
   // Auto-fix for legacy template Javascript that incorrectly parses currency symbols
