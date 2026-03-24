@@ -1,20 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const allowedOrigins = [
-  "https://fastesthre.com",
-  "http://localhost:8080"
+  'https://fastesthre.com',
+  'http://localhost:8080'
 ];
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("Origin");
-  const allowedOrigin = allowedOrigins.includes(origin as string) ? origin : "https://fastesthre.com";
-
+const getCorsHeaders = (req: Request) => {
+  const origin = req.headers.get('Origin');
+  const isAllowed = origin && allowedOrigins.includes(origin);
   return {
-    "Access-Control-Allow-Origin": allowedOrigin as string,
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[0],
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   };
-}
+};
 
 function jsonResponse(body: Record<string, unknown>, headers: Record<string, string>, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -254,8 +253,12 @@ Deno.serve(async (req) => {
     }
 
     return jsonResponse({ error: "Invalid action" }, corsHeaders, 400);
-  } catch (err) {
+  } catch (err: any) {
     console.error("Edge function error:", err);
-    return jsonResponse({ error: err.message || "Internal server error" }, corsHeaders, 500);
+    return jsonResponse({ error: err.message || "Internal server error" }, {
+      "Access-Control-Allow-Origin": "https://fastesthre.com",
+      "Access-Control-Allow-Headers":
+        "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    }, 500);
   }
 });
