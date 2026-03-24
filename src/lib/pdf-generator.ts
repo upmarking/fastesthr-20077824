@@ -42,7 +42,7 @@ function substituteVariables(html: string, vars: Record<string, string>): string
   
   // Auto-fix for legacy template Javascript that incorrectly parses currency symbols
   // Changes: .replace(/,/g, '')  ->  .replace(/[^0-9.-]/g, '')
-  result = result.replace(/\.replace\(\/\,\/g,\s*['"]['"]\)/g, ".replace(/[^0-9.-]/g, '')");
+  result = result.replace(/\.replace\(\s*\/[^/]*?(?:[,$€£₹]|Rs)[^/]*?\/[gim]*\s*,\s*(?:''|"")\s*\)/g, ".replace(/[^0-9.-]/g, '')");
   
   return result;
 }
