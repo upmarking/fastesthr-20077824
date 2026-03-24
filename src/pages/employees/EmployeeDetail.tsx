@@ -149,7 +149,7 @@ export default function EmployeeDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<EmployeeRecord>) => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) throw new Error('Company profile missing');
 
       let deptId = payload.department_id || null;
       let desigId = payload.designation_id || null;
@@ -214,7 +214,7 @@ export default function EmployeeDetail() {
 
   const terminateMutation = useMutation({
     mutationFn: async () => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) throw new Error('Company profile missing');
 
       const { error: empError } = await supabase
         .from('employees')
