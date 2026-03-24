@@ -15,6 +15,7 @@ const getCorsHeaders = (req: Request) => {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   console.log("Incoming request:", req.method);
   const corsHeaders = getCorsHeaders(req);
 
