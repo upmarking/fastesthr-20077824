@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,9 @@ const STATUS_OPTIONS = ['active', 'probation', 'on_leave', 'resigned', 'terminat
 const GENDERS = ['male', 'female', 'other', 'prefer_not_to_say'] as const;
 
 type Tab = 'profile' | 'attendance' | 'leaves' | 'payroll';
+
+type LeaveRequest = Database['public']['Tables']['leave_requests']['Row'];
+type AttendanceRecord = Database['public']['Tables']['attendance']['Row'];
 
 interface EmployeeRecord {
   id: string;
@@ -128,7 +132,7 @@ export default function EmployeeDetail() {
         .eq('employee_id', id!)
         .order('created_at', { ascending: false })
         .limit(20);
-      return data || [];
+      return (data || []) as LeaveRequest[];
     },
     enabled: !!id && activeTab === 'leaves',
   });
@@ -142,7 +146,7 @@ export default function EmployeeDetail() {
         .eq('employee_id', id!)
         .order('date', { ascending: false })
         .limit(30);
-      return data || [];
+      return (data || []) as AttendanceRecord[];
     },
     enabled: !!id && activeTab === 'attendance',
   });
@@ -565,7 +569,7 @@ export default function EmployeeDetail() {
               </div>
             ) : (
               <div className="divide-y divide-border/30 pt-2">
-                {attendanceRecords.map((rec: any) => (
+                {attendanceRecords.map((rec) => (
                   <div key={rec.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
                     <span className="text-primary font-medium">{rec.date}</span>
                     <span className="text-muted-foreground font-mono bg-muted/30 px-3 py-1 rounded-md">
@@ -606,7 +610,7 @@ export default function EmployeeDetail() {
               </div>
             ) : (
               <div className="divide-y divide-border/30 pt-2">
-                {leaveHistory.map((leave: any) => (
+                {leaveHistory.map((leave) => (
                   <div key={leave.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
                     <div>
                       <p className="text-foreground font-medium">{leave.leave_type_id || 'Leave'}</p>
