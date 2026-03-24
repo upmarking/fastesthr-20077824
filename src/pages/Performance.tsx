@@ -62,10 +62,11 @@ export default function Performance() {
   const { data: reviewCycles = [] } = useQuery({
     queryKey: ['review-cycles', profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id) return [];
       const { data } = await supabase
         .from('review_cycles')
         .select('*')
-        .eq('company_id', profile!.company_id!)
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false })
         .limit(5);
       return data || [];
