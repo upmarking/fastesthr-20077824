@@ -62,10 +62,11 @@ export default function Performance() {
   const { data: reviewCycles = [] } = useQuery({
     queryKey: ['review-cycles', profile?.company_id],
     queryFn: async () => {
+      if (!profile?.company_id) return [];
       const { data } = await supabase
         .from('review_cycles')
         .select('*')
-        .eq('company_id', profile!.company_id!)
+        .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false })
         .limit(5);
       return data || [];
@@ -112,8 +113,9 @@ export default function Performance() {
   const createCycleMutation = useMutation({
     mutationFn: async () => {
       if (!cycleForm.name.trim()) throw new Error('Name is required');
+      if (!profile?.company_id) throw new Error('Company ID is required');
       const { error } = await supabase.from('review_cycles').insert([{
-        company_id: profile!.company_id!,
+        company_id: profile.company_id,
         name: cycleForm.name,
         start_date: cycleForm.start_date,
         end_date: cycleForm.end_date,

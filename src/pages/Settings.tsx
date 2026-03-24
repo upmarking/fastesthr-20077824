@@ -77,9 +77,9 @@ export default function Settings() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success('Test email sent!', { id: toastId });
-    } catch (err: any) {
-      let msg = err.message || 'Unknown error';
-      if (err.context && typeof err.context.json === 'function') { try { const b = await err.context.json(); if (b.error) msg = b.error; } catch {} }
+    } catch (err: unknown) {
+      let msg = (err instanceof Error ? err.message : String(err)) || 'Unknown error';
+      if (err && typeof err === 'object' && 'context' in err && (err as any).context && typeof (err as any).context.json === 'function') { try { const b = await (err as any).context.json(); if (b.error) msg = b.error; } catch {} }
       toast.error(`SMTP Test Failed: ${msg}`, { id: toastId });
     } finally { setIsTestingSmtp(false); }
   };
@@ -641,29 +641,44 @@ function LeaveTypesTab({ companyId }: { companyId?: string | null }) {
 
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
+                <div className="space-y-0.5" id="label-is-active">
                   <Label className="text-sm">Active</Label>
                   <p className="text-[10px] text-muted-foreground">Visible to employees for application</p>
                 </div>
-                <button onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))} className={`w-10 h-5 rounded-full transition-all relative ${form.is_active ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                <button
+                  role="switch"
+                  aria-checked={form.is_active}
+                  aria-labelledby="label-is-active"
+                  onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))}
+                  className={`w-10 h-5 rounded-full transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${form.is_active ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
                   <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.is_active ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
+                <div className="space-y-0.5" id="label-carry-forward">
                   <Label className="text-sm">Carry Forward</Label>
                   <p className="text-[10px] text-muted-foreground">Allow unused days to transfer to next year</p>
                 </div>
-                <button onClick={() => setForm(f => ({ ...f, carry_forward: !f.carry_forward }))} className={`w-10 h-5 rounded-full transition-all relative ${form.carry_forward ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                <button
+                  role="switch"
+                  aria-checked={form.carry_forward}
+                  aria-labelledby="label-carry-forward"
+                  onClick={() => setForm(f => ({ ...f, carry_forward: !f.carry_forward }))}
+                  className={`w-10 h-5 rounded-full transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${form.carry_forward ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
                   <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.carry_forward ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/30">
-                <div className="space-y-0.5">
+                <div className="space-y-0.5" id="label-requires-document">
                   <Label className="text-sm">Requires Document</Label>
                   <p className="text-[10px] text-muted-foreground">Employees must upload medical or support docs</p>
                 </div>
-                <button onClick={() => setForm(f => ({ ...f, requires_document: !f.requires_document }))} className={`w-10 h-5 rounded-full transition-all relative ${form.requires_document ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
+                <button
+                  role="switch"
+                  aria-checked={form.requires_document}
+                  aria-labelledby="label-requires-document"
+                  onClick={() => setForm(f => ({ ...f, requires_document: !f.requires_document }))}
+                  className={`w-10 h-5 rounded-full transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${form.requires_document ? 'bg-primary' : 'bg-muted-foreground/30'}`}>
                   <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${form.requires_document ? 'left-5' : 'left-0.5'}`} />
                 </button>
               </div>
@@ -694,8 +709,13 @@ function NotificationsTab() {
       <p className="text-xs text-muted-foreground mb-4">Choose which events trigger email notifications to admins</p>
       {Object.entries(prefs).map(([key, val]) => (
         <div key={key} className="flex items-center justify-between p-3 rounded border border-border/50 bg-background/50">
-          <span className="text-sm capitalize">{key.replace(/_/g, ' ')}</span>
-          <button onClick={() => setPrefs(p => ({ ...p, [key]: !val }))} className={`w-10 h-5 rounded-full transition-colors relative ${val ? 'bg-primary' : 'bg-muted/50'}`}>
+          <span className="text-sm capitalize" id={`label-notify-${key}`}>{key.replace(/_/g, ' ')}</span>
+          <button
+            role="switch"
+            aria-checked={val}
+            aria-labelledby={`label-notify-${key}`}
+            onClick={() => setPrefs(p => ({ ...p, [key]: !val }))}
+            className={`w-10 h-5 rounded-full transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${val ? 'bg-primary' : 'bg-muted/50'}`}>
             <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${val ? 'left-5' : 'left-0.5'}`} />
           </button>
         </div>

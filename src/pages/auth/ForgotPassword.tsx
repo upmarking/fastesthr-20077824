@@ -27,8 +27,8 @@ export default function ForgotPassword() {
       if (error) throw error;
       setSent(true);
       toast.success('Reset link sent to your email');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+   toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

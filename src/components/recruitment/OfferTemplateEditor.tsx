@@ -286,8 +286,8 @@ function OfferTemplateEditor({ isOpen, onClose, template }: { isOpen: boolean, o
 
       queryClient.invalidateQueries({ queryKey: ['offer-templates'] });
       onClose();
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      toast.error(`Error: ${(error instanceof Error ? error.message : String(error))}`);
     } finally {
       setIsSaving(false);
     }

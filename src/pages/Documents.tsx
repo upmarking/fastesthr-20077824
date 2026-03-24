@@ -76,7 +76,7 @@ export default function Documents() {
         filePath: d.file_path
       }));
       setDocuments(formatted);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to load documents');
       console.error(err);
     } finally {
@@ -147,8 +147,8 @@ export default function Documents() {
       setForm({ name: '', category: 'hr_policies', description: '', expiresAt: '' });
       setFile(null);
       fetchDocuments();
-    } catch (err: any) {
-      toast.error('Failed to upload document: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to upload document: ' + (err instanceof Error ? err.message : String(err)));
       console.error(err);
     } finally {
       setUploading(false);
@@ -175,7 +175,7 @@ export default function Documents() {
 
       toast.success('Document removed');
       setDocuments(prev => prev.filter(d => d.id !== doc.id));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to delete document');
       console.error(err);
     }
@@ -203,7 +203,7 @@ export default function Documents() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success(`Downloading ${doc.name}...`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to download document');
       console.error(err);
     }
