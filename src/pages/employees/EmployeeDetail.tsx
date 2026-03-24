@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -565,7 +566,7 @@ export default function EmployeeDetail() {
               </div>
             ) : (
               <div className="divide-y divide-border/30 pt-2">
-                {attendanceRecords.map((rec: any) => (
+                {attendanceRecords.map((rec: Tables<'attendance'>) => (
                   <div key={rec.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
                     <span className="text-primary font-medium">{rec.date}</span>
                     <span className="text-muted-foreground font-mono bg-muted/30 px-3 py-1 rounded-md">
@@ -606,7 +607,7 @@ export default function EmployeeDetail() {
               </div>
             ) : (
               <div className="divide-y divide-border/30 pt-2">
-                {leaveHistory.map((leave: any) => (
+                {leaveHistory.map((leave: Tables<'leave_requests'>) => (
                   <div key={leave.id} className="flex items-center justify-between py-4 text-sm hover:bg-muted/10 transition-colors px-2 rounded-md">
                     <div>
                       <p className="text-foreground font-medium">{leave.leave_type_id || 'Leave'}</p>
