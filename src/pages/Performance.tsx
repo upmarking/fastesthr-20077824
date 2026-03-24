@@ -77,14 +77,15 @@ export default function Performance() {
   const createGoalMutation = useMutation({
     mutationFn: async (f: GoalForm) => {
       if (!employee) throw new Error('Employee record not found');
+      if (!profile?.company_id) throw new Error('Profile or company not found');
       const { error } = await supabase.from('goals').insert([{
-        company_id: profile!.company_id!,
+        company_id: profile.company_id,
         employee_id: employee.id,
         title: f.title,
         description: f.description,
         due_date: f.due_date || null,
         type: f.type,
-        created_by: profile!.id,
+        created_by: profile.id,
       }]);
       if (error) throw error;
     },
