@@ -223,8 +223,12 @@ export default function Billing() {
         setDiscountInfo(null);
         toast.error(result?.error || 'Invalid discount code');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+<<<<<<< fix/code-health-any-catch-block-8890773356268460049
+   toast.error(err instanceof Error ? err.message : String(err));
+=======
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+>>>>>>> main
       setDiscountInfo(null);
     } finally {
       setIsValidatingDiscount(false);
@@ -312,8 +316,12 @@ export default function Billing() {
         setIsProcessingPayment(false);
       });
       rzp.open();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+<<<<<<< fix/code-health-any-catch-block-8890773356268460049
+   toast.error(err instanceof Error ? err.message : String(err));
+=======
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+>>>>>>> main
     } finally {
       setIsProcessingPayment(false);
     }
@@ -340,8 +348,12 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to extend subscription');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+<<<<<<< fix/code-health-any-catch-block-8890773356268460049
+   toast.error(err instanceof Error ? err.message : String(err));
+=======
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+>>>>>>> main
     } finally {
       setIsExtending(false);
     }
@@ -367,8 +379,12 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to add seats');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+<<<<<<< fix/code-health-any-catch-block-8890773356268460049
+   toast.error(err instanceof Error ? err.message : String(err));
+=======
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+>>>>>>> main
     } finally {
       setIsAddingSeats(false);
     }
@@ -398,8 +414,12 @@ export default function Billing() {
       } else {
         toast.error(result?.error || 'Failed to redeem gift card');
       }
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+<<<<<<< fix/code-health-any-catch-block-8890773356268460049
+   toast.error(err instanceof Error ? err.message : String(err));
+=======
+      toast.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+>>>>>>> main
     } finally {
       setIsRedeemingGift(false);
     }

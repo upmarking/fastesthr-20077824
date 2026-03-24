@@ -49,15 +49,10 @@ function processDir(dir) {
       content = content.replace(/uppercase tracking-wider text-muted-foreground/g, 'font-medium text-muted-foreground');
       content = content.replace(/uppercase tracking-widest/g, 'tracking-tight');
       
-      // Clean arbitrary multiple spaces in class names (rudimentary)
-      content = content.replace(/className="\s+/g, 'className="');
-      content = content.replace(/\s+"/g, '"');
-      content = content.replace(/\s+/g, ' ');
-
-      // Fix any syntax breaks caused by space reduction replacing newlines
-      // WAIT! \s+ will replace newlines if not careful!
-      // Let's NOT do global \s+ replacement because it destroys JSX formatting.
-      // I will only do classname space cleanup.
+      // Clean arbitrary multiple spaces in class names
+      content = content.replace(/className="([^"]+)"/g, (match, p1) => {
+        return 'className="' + p1.replace(/\s+/g, ' ').trim() + '"';
+      });
       
       fs.writeFileSync(fullPath, content);
     }

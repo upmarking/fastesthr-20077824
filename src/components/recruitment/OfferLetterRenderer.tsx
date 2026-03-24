@@ -1,4 +1,5 @@
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useRef } from 'react';
+import DOMPurify from 'dompurify';
 
 interface OfferLetterRendererProps {
   htmlContent: string;
@@ -25,22 +26,9 @@ export function OfferLetterRenderer({
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
       content = content.replace(regex, value);
     });
-    return content;
+    // Sanitize the HTML to prevent XSS vulnerabilities
+    return DOMPurify.sanitize(content);
   }, [htmlContent, variables]);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Find all scripts inside the container and execute them
-    // dangerouslySetInnerHTML does not execute <script> tags by default
-    const scripts = Array.from(containerRef.current.querySelectorAll('script'));
-    scripts.forEach(oldScript => {
-      const newScript = document.createElement('script');
-      newScript.textContent = oldScript.textContent || '';
-      Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-      oldScript.parentNode?.replaceChild(newScript, oldScript);
-    });
-  }, [finalHtml]);
 
   return (
     <div className={`offer-letter-renderer ${className}`}>
