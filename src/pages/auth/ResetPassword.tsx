@@ -39,8 +39,8 @@ export default function ResetPassword() {
       if (error) throw error;
       toast.success('Password updated successfully');
       navigate('/login');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+   toast.error(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

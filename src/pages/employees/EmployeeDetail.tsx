@@ -86,7 +86,7 @@ export default function EmployeeDetail() {
   const { data: departments = [], refetch: refetchDepartments } = useQuery({
     queryKey: ['departments', profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) return [];
       const { data } = await supabase.from('departments').select('id, name').eq('company_id', profile.company_id).order('name');
       return (data || []) as { id: string; name: string }[];
     },
@@ -96,7 +96,7 @@ export default function EmployeeDetail() {
   const { data: designations = [], refetch: refetchDesignations } = useQuery({
     queryKey: ['designations', profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) return [];
       const { data } = await supabase.from('designations').select('id, title').eq('company_id', profile.company_id).order('title');
       return (data || []) as { id: string; title: string }[];
     },
@@ -106,7 +106,7 @@ export default function EmployeeDetail() {
   const { data: managers = [] } = useQuery({
     queryKey: ['managers', profile?.company_id],
     queryFn: async () => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) return [];
       const { data } = await supabase
         .from('employees')
         .select('id, first_name, last_name, employee_code')
@@ -149,7 +149,7 @@ export default function EmployeeDetail() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<EmployeeRecord>) => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) throw new Error('Company profile missing');
 
       let deptId = payload.department_id || null;
       let desigId = payload.designation_id || null;
@@ -214,7 +214,7 @@ export default function EmployeeDetail() {
 
   const terminateMutation = useMutation({
     mutationFn: async () => {
-      if (!profile?.company_id) throw new Error('Company ID is required');
+      if (!profile?.company_id) throw new Error('Company profile missing');
 
       const { error: empError } = await supabase
         .from('employees')
