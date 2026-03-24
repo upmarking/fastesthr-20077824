@@ -210,7 +210,9 @@ export default function HolidayCalendar() {
                           </Badge>
                           {isAdmin && (
                             <button
-                              className="text-destructive/50 hover:text-destructive transition-colors"
+                              aria-label={`Delete ${h.name}`}
+                              title={`Delete ${h.name}`}
+                              className="text-destructive/50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded transition-colors"
                               onClick={() => deleteMutation.mutate(h.id)}
                             >
                               <Trash2 className="w-3 h-3" />

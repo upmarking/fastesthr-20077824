@@ -65,6 +65,21 @@ const superAdminNav = [
   { title: 'System', url: '/admin/system', icon: Server },
 ];
 
+function buildRoleMap(navItems: NavItem[]): Record<Role, NavItem[]> {
+  const map = {} as Record<Role, NavItem[]>;
+  for (const item of navItems) {
+    for (const role of item.roles) {
+      if (!map[role]) map[role] = [];
+      map[role].push(item);
+    }
+  }
+  return map;
+}
+
+const fastBoardNavMap = buildRoleMap(fastBoardNav);
+const managementNavMap = buildRoleMap(managementNav);
+const accountNavMap = buildRoleMap(accountNav);
+
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -73,14 +88,9 @@ export function AppSidebar() {
   const isSuperAdmin = profile?.platform_role === 'super_admin';
   const userRole = (profile?.platform_role || 'user') as Role;
 
-  // Filter sidebar items by user's role
-  const filterNav = (navItems: NavItem[]) => isSuperAdmin
-    ? navItems
-    : navItems.filter(item => item.roles.includes(userRole));
-
-  const filteredFastBoard = filterNav(fastBoardNav);
-  const filteredManagement = filterNav(managementNav);
-  const filteredAccount = filterNav(accountNav);
+  const filteredFastBoard = isSuperAdmin ? fastBoardNav : (fastBoardNavMap[userRole] || []);
+  const filteredManagement = isSuperAdmin ? managementNav : (managementNavMap[userRole] || []);
+  const filteredAccount = isSuperAdmin ? accountNav : (accountNavMap[userRole] || []);
 
   const isActive = (url: string) => {
     if (url === '/dashboard') return location.pathname === '/dashboard';

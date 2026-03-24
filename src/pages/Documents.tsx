@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { differenceInDays } from 'date-fns';
 
 interface Document {
   id: string;
@@ -76,7 +77,7 @@ export default function Documents() {
         filePath: d.file_path
       }));
       setDocuments(formatted);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to load documents');
       console.error(err);
     } finally {
@@ -99,13 +100,19 @@ export default function Documents() {
     if (!expiresAt) return null;
     const now = new Date();
     const exp = new Date(expiresAt);
-    const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = differenceInDays(exp, now);
     if (daysLeft < 0) return { label: 'Expired', class: 'border-destructive text-destructive bg-destructive/10' };
     if (daysLeft <= 30) return { label: `Expires in ${daysLeft}d`, class: 'border-warning text-warning bg-warning/10' };
     return { label: `Expires: ${expiresAt}`, class: 'border-muted text-muted-foreground' };
   };
 
-  const expiringCount = documents.filter(d => { const s = getExpiryStatus(d.expiresAt); return s && (s.label.includes('Expired') || s.label.includes('Expires in')); }).length;
+  const now = new Date();
+  const expiringCount = documents.filter(d => {
+    if (!d.expiresAt) return false;
+    const exp = new Date(d.expiresAt);
+    const daysLeft = differenceInDays(exp, now);
+    return daysLeft <= 30;
+  }).length;
 
   const handleCreate = async () => {
     if (!form.name.trim()) { toast.error('Document name is required'); return; }
@@ -147,8 +154,8 @@ export default function Documents() {
       setForm({ name: '', category: 'hr_policies', description: '', expiresAt: '' });
       setFile(null);
       fetchDocuments();
-    } catch (err: any) {
-      toast.error('Failed to upload document: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to upload document: ' + (err instanceof Error ? err.message : String(err)));
       console.error(err);
     } finally {
       setUploading(false);
@@ -175,7 +182,7 @@ export default function Documents() {
 
       toast.success('Document removed');
       setDocuments(prev => prev.filter(d => d.id !== doc.id));
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to delete document');
       console.error(err);
     }
@@ -203,7 +210,7 @@ export default function Documents() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success(`Downloading ${doc.name}...`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('Failed to download document');
       console.error(err);
     }

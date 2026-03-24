@@ -86,10 +86,18 @@ export function CandidateActions({
         toast.info('Automation: Generating offer letter PDF...');
         
         // 1. Fetch required data for PDF (including email_subject and email_body from template)
-        const { data: template } = await supabase.from('offer_templates').select('*').eq('id', templateId).single();
-        const { data: candidateInfo } = await supabase.from('candidates').select('full_name, email').eq('id', candidateId).single();
-        const { data: jobInfo } = await supabase.from('jobs').select('title').eq('id', jobId).single();
-        const { data: companyInfo } = await supabase.from('companies').select('offer_sequence_prefix, timezone, currency, compensation_structure').eq('id', (job as any).company_id).single();
+        // Execute independent queries in parallel
+        const [
+          { data: template },
+          { data: candidateInfo },
+          { data: jobInfo },
+          { data: companyInfo }
+        ] = await Promise.all([
+          supabase.from('offer_templates').select('*').eq('id', templateId).single(),
+          supabase.from('candidates').select('full_name, email').eq('id', candidateId).single(),
+          supabase.from('jobs').select('title').eq('id', jobId).single(),
+          supabase.from('companies').select('offer_sequence_prefix, timezone, currency, compensation_structure').eq('id', (job as any).company_id).single()
+        ]);
         
         if (!template) {
           toast.error('Offer template not found. Please check your template configuration.');
@@ -232,11 +240,19 @@ export function CandidateActions({
     const nextStage = pipelineStages[currentIndex + 1];
     
     if (nextStage === 'offer') {
-      // Fetch job settings to get automation template id and employment type
-      const { data: job } = await supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single();
-      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      // Fetch job settings and candidate info in parallel
+      const [
+        { data: job },
+        { data }
+      ] = await Promise.all([
+        supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single(),
+        supabase.from('candidates').select('full_name').eq('id', candidateId).single()
+      ]);
+
       setJobEmploymentType((job as any)?.employment_type);
-      
+      setCandidate(data);
+
+      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
       if (templateId) {
         const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
         if (template?.custom_variables) {
@@ -244,11 +260,10 @@ export function CandidateActions({
         } else {
           setTemplateCustomVariables([]);
         }
+      } else {
+        setTemplateCustomVariables([]);
       }
 
-      // Fetch candidate info for the dialog
-      const { data } = await supabase.from('candidates').select('full_name').eq('id', candidateId).single();
-      setCandidate(data);
       setPendingStage(nextStage);
       setIsOfferDialogOpen(true);
     } else if (nextStage && nextStage !== 'rejected') {
@@ -281,25 +296,33 @@ export function CandidateActions({
 
   const handleResendOffer = async () => {
     try {
-      const { data: candData } = await supabase.from('candidates').select('full_name').eq('id', candidateId).single();
-      setCandidate(candData);
+      // Execute independent queries in parallel
+      const [
+        { data: candData },
+        { data: job },
+        { data: offerData }
+      ] = await Promise.all([
+        supabase.from('candidates').select('full_name').eq('id', candidateId).single(),
+        supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single(),
+        supabase
+          .from('candidate_offers')
+          .select('joining_date, payout, custom_variable_values')
+          .eq('candidate_id', candidateId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ]);
 
-      // Fetch template variables
-      const { data: job } = await supabase.from('jobs').select('stage_automations, employment_type').eq('id', jobId).single();
-      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
+      setCandidate(candData);
       setJobEmploymentType((job as any)?.employment_type);
+
+      const templateId = (job as any)?.stage_automations?.['offer']?.offer_template_id;
       if (templateId) {
         const { data: template } = await supabase.from('offer_templates').select('custom_variables').eq('id', templateId).single();
         setTemplateCustomVariables(template?.custom_variables as any[] || []);
+      } else {
+        setTemplateCustomVariables([]);
       }
-
-      const { data: offerData } = await supabase
-        .from('candidate_offers')
-        .select('joining_date, payout, custom_variable_values')
-        .eq('candidate_id', candidateId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
 
       if (offerData) {
         setExistingOffer({

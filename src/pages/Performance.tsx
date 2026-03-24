@@ -79,7 +79,7 @@ export default function Performance() {
   const createGoalMutation = useMutation({
     mutationFn: async (f: GoalForm) => {
       if (!employee) throw new Error('Employee record not found');
-      if (!profile?.company_id || !profile?.id) throw new Error('Profile missing');
+      if (!profile?.company_id) throw new Error('Profile or company not found');
       const { error } = await supabase.from('goals').insert([{
         company_id: profile.company_id,
         employee_id: employee.id,
@@ -116,7 +116,7 @@ export default function Performance() {
   const createCycleMutation = useMutation({
     mutationFn: async () => {
       if (!cycleForm.name.trim()) throw new Error('Name is required');
-      if (!profile?.company_id) throw new Error('Company ID missing');
+      if (!profile?.company_id) throw new Error('Company ID is required');
       const { error } = await supabase.from('review_cycles').insert([{
         company_id: profile.company_id,
         name: cycleForm.name,
