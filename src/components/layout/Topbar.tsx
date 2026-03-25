@@ -98,7 +98,7 @@ export function Topbar() {
       </CommandDialog>
 
       {/* Theme toggle */}
-      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggle}>
+      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggle} aria-label="Toggle theme">
         {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
       </Button>
 
