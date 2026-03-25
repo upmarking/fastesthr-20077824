@@ -47,6 +47,6 @@ describe('replaceVariables', () => {
   it('should handle special characters in replacement values', () => {
     const html = '<p>Your bonus is {{bonus}}</p>';
     const variables = { bonus: '$1,000.50 & 10% shares!' };
-    expect(replaceVariables(html, variables)).toBe('<p>Your bonus is $1,000.50 & 10% shares!</p>');
+    expect(replaceVariables(html, variables)).toBe('<p>Your bonus is $1,000.50 &amp; 10% shares!</p>');
   });
 });

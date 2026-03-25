@@ -142,11 +142,26 @@ export function OfferLetterRenderer({
   );
 }
 
+/**
+ * HTML Escapes variable values to prevent Cross-Site Scripting (XSS)
+ */
+function escapeHtml(unsafe: string): string {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function replaceVariables(html: string, variables: Record<string, string>): string {
     let content = html;
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-      content = content.replace(regex, value);
+      // Escape the HTML special characters in the variable value to prevent XSS
+      const safeValue = escapeHtml(String(value));
+      content = content.replace(regex, () => safeValue);
     });
     return content;
 }
