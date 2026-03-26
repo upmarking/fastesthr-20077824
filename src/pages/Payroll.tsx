@@ -39,6 +39,16 @@ const COMP_LABELS: { key: keyof CompensationStructure; label: string; variable: 
   { key: 'medical_insurance', label: 'Medical Insurance', variable: '{{Medical Insurance Percent}}' },
 ];
 
+// ⚡ Bolt: Hoisted static object configuration outside of component body
+// to prevent unnecessary memory reallocation on every render.
+const statusColor: Record<string, string> = {
+  draft: 'border-muted text-muted-foreground',
+  processing: 'border-warning text-warning bg-warning/10',
+  review: 'border-info text-info bg-info/10',
+  finalized: 'border-success text-success bg-success/10',
+  paid: 'border-info text-info bg-info/10',
+};
+
 export default function Payroll() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
@@ -158,14 +168,6 @@ export default function Payroll() {
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to run payroll'),
   });
-
-  const statusColor: Record<string, string> = {
-    draft: 'border-muted text-muted-foreground',
-    processing: 'border-warning text-warning bg-warning/10',
-    review: 'border-info text-info bg-info/10',
-    finalized: 'border-success text-success bg-success/10',
-    paid: 'border-info text-info bg-info/10',
-  };
 
   // ── Compensation Structure ──
   const [compStructure, setCompStructure] = useState<CompensationStructure>({ ...DEFAULT_COMPENSATION });

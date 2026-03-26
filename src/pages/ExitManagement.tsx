@@ -26,6 +26,14 @@ const assetChecklist = [
   'Books / Documents',
 ];
 
+// ⚡ Bolt: Hoisted static object configuration outside of component body
+// to prevent unnecessary memory reallocation on every render.
+const statusColor: Record<string, string> = {
+  initiated: 'border-warning text-warning bg-warning/10',
+  in_progress: 'border-info text-info bg-info/10',
+  completed: 'border-success text-success bg-success/10',
+};
+
 export default function ExitManagement() {
   const { profile } = useAuthStore();
   const isAdmin = profile?.platform_role === 'company_admin' || profile?.platform_role === 'super_admin';
@@ -176,12 +184,6 @@ export default function ExitManagement() {
         status: 'completed'
       }
     });
-  };
-
-  const statusColor: Record<string, string> = {
-    initiated: 'border-warning text-warning bg-warning/10',
-    in_progress: 'border-info text-info bg-info/10',
-    completed: 'border-success text-success bg-success/10',
   };
 
   const selectedRecord = exits.find(e => e.id === selectedExit);
