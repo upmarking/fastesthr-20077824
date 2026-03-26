@@ -9,7 +9,9 @@ import { useTheme } from '@/hooks/use-theme';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
-
+import Landing from '@/pages/Landing';
+import BlogList from '@/pages/BlogList';
+import BlogPost from '@/pages/BlogPost';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
@@ -47,6 +49,17 @@ const NewJob = lazy(() => import('@/pages/recruitment/NewJob'));
 import PlaceholderPage from '@/pages/PlaceholderPage';
 import NotFound from '@/pages/NotFound';
 
+import CoreEngine from '@/pages/public/CoreEngine';
+import PayrollOS from '@/pages/public/PayrollOS';
+import TalentPipeline from '@/pages/public/TalentPipeline';
+import APIDocs from '@/pages/public/APIDocs';
+import About from '@/pages/public/About';
+import Careers from '@/pages/public/Careers';
+import Changelog from '@/pages/public/Changelog';
+import TermsOfService from '@/pages/public/TermsOfService';
+import PrivacyPolicy from '@/pages/public/PrivacyPolicy';
+import Security from '@/pages/public/Security';
+
 const queryClient = new QueryClient();
 
 function AppRoutes() {
@@ -81,7 +94,9 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/blog" element={<BlogList />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -118,6 +133,18 @@ function AppRoutes() {
       <Route path="/admin/companies" element={withLayout(<Companies />, 'super_admin')} />
       <Route path="/admin/subscriptions" element={withLayout(<Subscriptions />, 'super_admin')} />
       <Route path="/admin/system" element={withLayout(<SystemSettings />, 'super_admin')} />
+
+      {/* Footer Pages */}
+      <Route path="/platform/core-engine" element={<CoreEngine />} />
+      <Route path="/platform/payroll-os" element={<PayrollOS />} />
+      <Route path="/platform/talent-pipeline" element={<TalentPipeline />} />
+      <Route path="/platform/api-docs" element={<APIDocs />} />
+      <Route path="/company/about" element={<About />} />
+      <Route path="/company/careers" element={<Careers />} />
+      <Route path="/company/changelog" element={<Changelog />} />
+      <Route path="/legal/terms" element={<TermsOfService />} />
+      <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+      <Route path="/legal/security" element={<Security />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
