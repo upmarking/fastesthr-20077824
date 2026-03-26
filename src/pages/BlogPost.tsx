@@ -1,10 +1,11 @@
+import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { Footer } from '@/components/layout/Footer';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { ArrowLeft, Clock, Zap, Share2, Bookmark } from 'lucide-react';
 
-import { BLOGS } from '@/data/blogs';
+import { BLOGS, BlogPost as BlogPostType } from '@/data/blogs';
 
 const BlogPost = () => {
   const { slug } = useParams();
@@ -15,7 +16,7 @@ const BlogPost = () => {
     restDelta: 0.001
   });
 
-  const [blogData, setBlogData] = useState<any>(null);
+  const [blogData, setBlogData] = useState<BlogPostType | null>(null);
 
   useEffect(() => {
     const post = BLOGS.find(b => b.slug === slug);
@@ -116,7 +117,7 @@ const BlogPost = () => {
                        prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:text-cyan-300 hover:prose-a:underline
                        prose-blockquote:border-cyan-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-r-lg prose-blockquote:not-italic prose-blockquote:text-zinc-200
                        prose-strong:text-white"
-            dangerouslySetInnerHTML={{ __html: blogData.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blogData.content) }}
           />
 
           {/* End of article marker */}
