@@ -15,6 +15,14 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusColor: Record<string, string> = {
+    initiated: 'border-warning text-warning bg-warning/10',
+    in_progress: 'border-info text-info bg-info/10',
+    completed: 'border-success text-success bg-success/10',
+  };
+
+
 const assetChecklist = [
   'Laptop / Desktop',
   'ID Card / Access Card',
@@ -178,11 +186,6 @@ export default function ExitManagement() {
     });
   };
 
-  const statusColor: Record<string, string> = {
-    initiated: 'border-warning text-warning bg-warning/10',
-    in_progress: 'border-info text-info bg-info/10',
-    completed: 'border-success text-success bg-success/10',
-  };
 
   const selectedRecord = exits.find(e => e.id === selectedExit);
 

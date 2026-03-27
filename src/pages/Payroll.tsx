@@ -12,6 +12,19 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusColor: Record<string, string> = {
+    draft: 'border-muted text-muted-foreground',
+    processing: 'border-warning text-warning bg-warning/10',
+    review: 'border-info text-info bg-info/10',
+    finalized: 'border-success text-success bg-success/10',
+    paid: 'border-info text-info bg-info/10',
+  };
+
+
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+
+
 const DEFAULT_COMPENSATION: CompensationStructure = {
   basic_pay: 50,
   dearness_allowance: 10,
@@ -159,13 +172,6 @@ export default function Payroll() {
     onError: (err: any) => toast.error(err?.message || 'Failed to run payroll'),
   });
 
-  const statusColor: Record<string, string> = {
-    draft: 'border-muted text-muted-foreground',
-    processing: 'border-warning text-warning bg-warning/10',
-    review: 'border-info text-info bg-info/10',
-    finalized: 'border-success text-success bg-success/10',
-    paid: 'border-info text-info bg-info/10',
-  };
 
   // ── Compensation Structure ──
   const [compStructure, setCompStructure] = useState<CompensationStructure>({ ...DEFAULT_COMPENSATION });

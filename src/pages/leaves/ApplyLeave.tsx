@@ -11,6 +11,14 @@ import { ArrowLeft, CalendarDays, Loader2, Send, Clock, CheckCircle, XCircle } f
 import { toast } from 'sonner';
 import { differenceInDays, parseISO } from 'date-fns';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusStyle: Record<string, string> = {
+    approved: 'border-success text-success bg-success/10',
+    rejected: 'border-destructive text-destructive bg-destructive/10',
+    pending: 'border-warning text-warning bg-warning/10',
+  };
+
+
 export default function ApplyLeave() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -131,11 +139,6 @@ export default function ApplyLeave() {
     applyMutation.mutate();
   };
 
-  const statusStyle: Record<string, string> = {
-    approved: 'border-success text-success bg-success/10',
-    rejected: 'border-destructive text-destructive bg-destructive/10',
-    pending: 'border-warning text-warning bg-warning/10',
-  };
 
   const StatusIcon = ({ status }: { status: string }) => {
     if (status === 'approved') return <CheckCircle className="h-4 w-4 text-success" />;

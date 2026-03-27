@@ -16,6 +16,16 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusColor: Record<string, string> = {
+    active: 'border-success text-success bg-success/10',
+    on_track: 'border-success text-success bg-success/10',
+    at_risk: 'border-warning text-warning bg-warning/10',
+    completed: 'border-info text-info bg-info/10',
+    missed: 'border-destructive text-destructive bg-destructive/10',
+  };
+
+
 interface GoalForm {
   title: string;
   description: string;
@@ -147,13 +157,6 @@ export default function Performance() {
   const completedGoals = goals.filter((g: any) => g.status === 'completed');
   const avgProgress = goals.length > 0 ? Math.round(goals.reduce((s: number, g: any) => s + (g.progress || 0), 0) / goals.length) : 0;
 
-  const statusColor: Record<string, string> = {
-    active: 'border-success text-success bg-success/10',
-    on_track: 'border-success text-success bg-success/10',
-    at_risk: 'border-warning text-warning bg-warning/10',
-    completed: 'border-info text-info bg-info/10',
-    missed: 'border-destructive text-destructive bg-destructive/10',
-  };
 
   return (
     <div className="space-y-6">

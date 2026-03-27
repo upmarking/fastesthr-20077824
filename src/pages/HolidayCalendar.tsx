@@ -12,6 +12,15 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const typeColor: Record<string, string> = {
+    public: 'border-success text-success bg-success/10',
+    restricted: 'border-warning text-warning bg-warning/10',
+    optional: 'border-info text-info bg-info/10',
+    company: 'border-primary text-primary bg-primary/10',
+  };
+
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function HolidayCalendar() {
@@ -78,12 +87,6 @@ export default function HolidayCalendar() {
     byMonth[m].push(h);
   });
 
-  const typeColor: Record<string, string> = {
-    public: 'border-success text-success bg-success/10',
-    restricted: 'border-warning text-warning bg-warning/10',
-    optional: 'border-info text-info bg-info/10',
-    company: 'border-primary text-primary bg-primary/10',
-  };
 
   const today = new Date();
   const isUpcoming = (dateStr: string) => {

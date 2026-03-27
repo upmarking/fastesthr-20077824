@@ -13,6 +13,16 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusColor: Record<string, string> = {
+    active: 'bg-success/10 text-success',
+    probation: 'bg-warning/10 text-warning',
+    on_leave: 'bg-info/10 text-info',
+    resigned: 'bg-muted text-muted-foreground',
+    terminated: 'bg-destructive/10 text-destructive',
+  };
+
+
 export default function Employees() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
@@ -44,13 +54,6 @@ export default function Employees() {
     enabled: !!profile?.company_id,
   });
 
-  const statusColor: Record<string, string> = {
-    active: 'bg-success/10 text-success',
-    probation: 'bg-warning/10 text-warning',
-    on_leave: 'bg-info/10 text-info',
-    resigned: 'bg-muted text-muted-foreground',
-    terminated: 'bg-destructive/10 text-destructive',
-  };
 
   return (
     <div className="space-y-6">

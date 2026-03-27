@@ -9,6 +9,20 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusColors: Record<string, string> = {
+    present: 'border-success text-success bg-success/10',
+    late: 'border-warning text-warning bg-warning/10',
+    early_leave: 'border-info text-info bg-info/10',
+    absent: 'border-destructive text-destructive bg-destructive/10',
+    half_day: 'border-orange-500 text-orange-500 bg-orange-500/10',
+  };
+
+
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const workTypeIcons: Record<string, any> = { office: Building, remote: Home, hybrid: Globe };
+
+
 const LATE_THRESHOLD_HOUR = 9; // 9 AM
 const LATE_THRESHOLD_MIN = 15; // 9:15 AM grace period
 
@@ -160,15 +174,7 @@ export default function Attendance() {
     return null;
   };
 
-  const workTypeIcons: Record<string, any> = { office: Building, remote: Home, hybrid: Globe };
-  const todayWorkType = todayRecord ? getWorkTypeFromRecord(todayRecord) : null;
-  const statusColors: Record<string, string> = {
-    present: 'border-success text-success bg-success/10',
-    late: 'border-warning text-warning bg-warning/10',
-    early_leave: 'border-info text-info bg-info/10',
-    absent: 'border-destructive text-destructive bg-destructive/10',
-    half_day: 'border-orange-500 text-orange-500 bg-orange-500/10',
-  };
+    const todayWorkType = todayRecord ? getWorkTypeFromRecord(todayRecord) : null;
 
   return (
     <div className="space-y-6">

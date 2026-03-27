@@ -15,6 +15,26 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const statusStyle: Record<string, string> = {
+    open: 'border-primary text-primary bg-primary/10',
+    in_progress: 'border-info text-info bg-info/10',
+    pending_reply: 'border-warning text-warning bg-warning/10',
+    resolved: 'border-success text-success bg-success/10',
+    closed: 'border-muted text-muted-foreground',
+  };
+
+
+// Performance: Hoisted static configuration object to prevent reallocation on every render
+const priorityStyle: Record<string, string> = {
+    high: 'bg-destructive/10 text-destructive',
+    critical: 'bg-destructive/10 text-destructive',
+    urgent: 'bg-destructive/10 text-destructive',
+    medium: 'bg-warning/10 text-warning',
+    low: 'bg-info/10 text-info',
+  };
+
+
 interface TicketForm {
   subject: string;
   description: string;
@@ -126,20 +146,6 @@ export default function HelpDesk() {
   const inProgressCount = tickets.filter((t: any) => t.status === 'in_progress').length;
   const resolvedCount = tickets.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length;
 
-  const priorityStyle: Record<string, string> = {
-    high: 'bg-destructive/10 text-destructive',
-    critical: 'bg-destructive/10 text-destructive',
-    urgent: 'bg-destructive/10 text-destructive',
-    medium: 'bg-warning/10 text-warning',
-    low: 'bg-info/10 text-info',
-  };
-  const statusStyle: Record<string, string> = {
-    open: 'border-primary text-primary bg-primary/10',
-    in_progress: 'border-info text-info bg-info/10',
-    pending_reply: 'border-warning text-warning bg-warning/10',
-    resolved: 'border-success text-success bg-success/10',
-    closed: 'border-muted text-muted-foreground',
-  };
 
   const isAdmin = profile?.platform_role === 'company_admin' || profile?.platform_role === 'super_admin';
 
