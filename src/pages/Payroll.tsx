@@ -339,7 +339,7 @@ export default function Payroll() {
                         <span className="text-xs text-muted-foreground">Net: ${(slip.net_salary || 0).toLocaleString()}</span>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20">
+                    <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/20" aria-label="Download payslip">
                       <Download className="w-4 h-4" />
                     </Button>
                   </div>
