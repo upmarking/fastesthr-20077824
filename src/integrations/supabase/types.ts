@@ -400,7 +400,10 @@ export type Database = {
           country: string | null
           created_at: string
           currency: string | null
+          custom_domain: string | null
           deleted_at: string | null
+          domain_config: Json | null
+          domain_verified: boolean | null
           id: string
           industry: string | null
           is_active: boolean | null
@@ -433,7 +436,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          custom_domain?: string | null
           deleted_at?: string | null
+          domain_config?: Json | null
+          domain_verified?: boolean | null
           id?: string
           industry?: string | null
           is_active?: boolean | null
@@ -466,7 +472,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           currency?: string | null
+          custom_domain?: string | null
           deleted_at?: string | null
+          domain_config?: Json | null
+          domain_verified?: boolean | null
           id?: string
           industry?: string | null
           is_active?: boolean | null
