@@ -6,7 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Building, Bell, Shield, KeyIcon, Users, Mail, Settings2, Loader2, Send, Plus, Trash2, Clock, DollarSign, Percent, Gift } from 'lucide-react';
+import { Calendar, Building, Bell, Shield, KeyIcon, Users, Mail, Settings2, Loader2, Send, Plus, Trash2, Clock, DollarSign, Percent, Gift, Globe } from 'lucide-react';
+import DomainSettings from '@/pages/settings/DomainSettings';
 import { useAuthStore } from '@/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,6 +95,7 @@ export default function Settings() {
     { id: 'email_docs', label: 'Email & Documents', icon: Mail },
     { id: 'security', label: 'Security & SSO', icon: KeyIcon },
     { id: 'integrations', label: 'Integrations', icon: Users },
+    { id: 'domains', label: 'Domain', icon: Globe },
   ];
 
   return (
@@ -135,6 +137,7 @@ export default function Settings() {
               {activeTab === 'notifications' && "Configure notification preferences."}
               {activeTab === 'security' && "Security and single sign-on settings."}
               {activeTab === 'integrations' && "Third-party integrations and API keys."}
+              {activeTab === 'domains' && "Manage your workspace URL and custom domain."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -158,6 +161,8 @@ export default function Settings() {
               <SecurityTab />
             ) : activeTab === 'integrations' ? (
               <IntegrationsTab />
+            ) : activeTab === 'domains' ? (
+              <DomainSettings />
             ) : null}
           </CardContent>
         </Card>

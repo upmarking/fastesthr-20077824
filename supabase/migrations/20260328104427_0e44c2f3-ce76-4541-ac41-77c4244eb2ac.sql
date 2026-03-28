@@ -1,0 +1,4 @@
+ALTER TABLE public.companies
+  ADD COLUMN IF NOT EXISTS custom_domain TEXT,
+  ADD COLUMN IF NOT EXISTS domain_verified BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS domain_config JSONB;
