@@ -297,7 +297,7 @@ export function AppSidebar() {
             </div>
           )}
           {!collapsed && (
-            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={signOut}>
+            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={signOut} aria-label="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           )}
