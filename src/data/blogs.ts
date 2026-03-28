@@ -290,7 +290,7 @@ export const BLOGS: BlogPost[] = [
       
       <blockquote>"The value of a human is not in the tasks they repeat, but in the problems they solve. Our mission is to automate the repetition so we can celebrate the solution."</blockquote>
       
-      <p>The evolution has already begun. The protocol is initialized. The question is no longer whether you will adapt, but how quickly you can initialize the transition. Welcome to the future of the workforce. Welcome to the FastestHR Matrix.</p>
+      <p>The evolution has already begun. The protocol is initialized. The question is no longer whether you will adapt, but how quickly you can initialize the transition. Welcome to the future of the workforce. Welcome to the FastestHR.</p>
     `
   },
   {

@@ -4,7 +4,7 @@ import { FileText, Shield, Scale, AlertCircle, ChevronRight } from 'lucide-react
 
 const TermsOfService = () => {
   const sections = [
-    { title: '1. Protocol Acceptance', content: 'By accessing the FastestHR Matrix (the "Service"), you agree to be bound by these Protocol Terms. If you do not agree to the terms, do not initialize a connection.' },
+    { title: '1. Protocol Acceptance', content: 'By accessing the FastestHR (the "Service"), you agree to be bound by these Protocol Terms. If you do not agree to the terms, do not initialize a connection.' },
     { title: '2. Node Responsibilities', content: 'Users are responsible for maintaining the security of their access keys and for all activity occurring under their node ID. Any breach of security must be reported instantly.' },
     { title: '3. Data Sovereignty', content: 'You retain all rights to the data you input into the Service. We act as a neutral processor, executing mutations as directed by your authorized keys.' },
     { title: '4. Service Availability', content: 'We strive for 99.99% uptime. However, maintenance windows and emergency patches may cause transient latency. We are not liable for any data drift during these periods.' },

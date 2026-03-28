@@ -50,7 +50,7 @@ export const Footer = () => {
         
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-zinc-600 font-mono">
-            © {new Date().getFullYear()} FastestHR Matrix Protocol. All packets secured.
+            © {new Date().getFullYear()} FastestHR. All packets secured.
           </div>
           <div className="text-sm text-zinc-500 font-mono flex items-center gap-1">
             Made with <span className="text-rose-500 animate-pulse">❤️</span> in India

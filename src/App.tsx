@@ -34,6 +34,7 @@ import Billing from '@/pages/Billing';
 import Onboarding from '@/pages/Onboarding';
 import ExitManagement from '@/pages/ExitManagement';
 import HolidayCalendar from '@/pages/HolidayCalendar';
+import SendDesk from '@/pages/SendDesk';
 
 
 import Companies from '@/pages/admin/Companies';
@@ -125,6 +126,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={withLayout(<Onboarding />)} />
       <Route path="/exit-management" element={withLayout(<ExitManagement />)} />
       <Route path="/holidays" element={withLayout(<HolidayCalendar />)} />
+      <Route path="/senddesk" element={withLayout(<SendDesk />)} />
       <Route path="/billing" element={withLayout(<Billing />, 'company_admin')} />
       <Route path="/settings/*" element={withLayout(<Settings />, 'company_admin')} />
 
