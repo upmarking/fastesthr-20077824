@@ -57,8 +57,7 @@ export default function Documents() {
       const { data, error } = await supabase
         .from('company_documents')
         .select(`
-          id, name, category, description, file_path, size, expires_at, created_at,
-          profiles:created_by ( full_name )
+          id, name, category, description, file_path, size, expires_at, created_at, created_by
         `)
         .eq('company_id', profile.company_id)
         .order('created_at', { ascending: false });
@@ -70,7 +69,7 @@ export default function Documents() {
         name: d.name,
         category: d.category,
         description: d.description || '',
-        uploadedBy: d.profiles?.full_name || 'System',
+        uploadedBy: 'System',
         uploadedAt: new Date(d.created_at).toISOString().split('T')[0],
         size: formatSize(d.size),
         expiresAt: d.expires_at ? new Date(d.expires_at).toISOString().split('T')[0] : undefined,
