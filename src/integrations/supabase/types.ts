@@ -412,6 +412,8 @@ export type Database = {
           plan: string | null
           plan_expires_at: string | null
           price_per_license: number | null
+          senddesk_sequence_current: number | null
+          senddesk_sequence_prefix: string | null
           setup_completed: boolean | null
           size: string | null
           slug: string
@@ -443,6 +445,8 @@ export type Database = {
           plan?: string | null
           plan_expires_at?: string | null
           price_per_license?: number | null
+          senddesk_sequence_current?: number | null
+          senddesk_sequence_prefix?: string | null
           setup_completed?: boolean | null
           size?: string | null
           slug: string
@@ -474,6 +478,8 @@ export type Database = {
           plan?: string | null
           plan_expires_at?: string | null
           price_per_license?: number | null
+          senddesk_sequence_current?: number | null
+          senddesk_sequence_prefix?: string | null
           setup_completed?: boolean | null
           size?: string | null
           slug?: string
@@ -489,6 +495,53 @@ export type Database = {
           work_days?: string[] | null
         }
         Relationships: []
+      }
+      company_documents: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expires_at: string | null
+          file_path: string
+          id: string
+          name: string
+          size: number
+        }
+        Insert: {
+          category: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          file_path: string
+          id?: string
+          name: string
+          size: number
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          file_path?: string
+          id?: string
+          name?: string
+          size?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_enrollments: {
         Row: {
@@ -2126,6 +2179,223 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      senddesk_documents: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          document_number: string
+          employee_id: string | null
+          html_content: string
+          id: string
+          is_predefined_html: boolean | null
+          letterhead_url: string | null
+          name: string
+          pdf_url: string | null
+          status: string
+          sub_category: string | null
+          template_id: string | null
+          updated_at: string
+          variable_values: Json | null
+        }
+        Insert: {
+          category?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          document_number: string
+          employee_id?: string | null
+          html_content: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name: string
+          pdf_url?: string | null
+          status?: string
+          sub_category?: string | null
+          template_id?: string | null
+          updated_at?: string
+          variable_values?: Json | null
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_number?: string
+          employee_id?: string | null
+          html_content?: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name?: string
+          pdf_url?: string | null
+          status?: string
+          sub_category?: string | null
+          template_id?: string | null
+          updated_at?: string
+          variable_values?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "senddesk_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "senddesk_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "senddesk_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "senddesk_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      senddesk_emails: {
+        Row: {
+          attachments: Json | null
+          body_html: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          document_id: string | null
+          employee_id: string | null
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          attachments?: Json | null
+          body_html: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          attachments?: Json | null
+          body_html?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          document_id?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "senddesk_emails_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "senddesk_emails_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "senddesk_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "senddesk_emails_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      senddesk_templates: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custom_variables: Json | null
+          email_body: string | null
+          email_subject: string | null
+          html_content: string
+          id: string
+          is_predefined_html: boolean | null
+          letterhead_url: string | null
+          name: string
+          sub_category: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custom_variables?: Json | null
+          email_body?: string | null
+          email_subject?: string | null
+          html_content?: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name: string
+          sub_category?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custom_variables?: Json | null
+          email_body?: string | null
+          email_subject?: string | null
+          html_content?: string
+          id?: string
+          is_predefined_html?: boolean | null
+          letterhead_url?: string | null
+          name?: string
+          sub_category?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "senddesk_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
