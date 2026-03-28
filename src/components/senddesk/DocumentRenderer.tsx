@@ -23,7 +23,7 @@ export function DocumentRenderer({
     let content = htmlContent;
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-      content = content.replace(regex, value);
+      content = content.replace(regex, () => value);
     });
     return DOMPurify.sanitize(content);
   }, [htmlContent, variables]);
@@ -138,7 +138,7 @@ export function replaceDocVariables(html: string, variables: Record<string, stri
   let content = html;
   Object.entries(variables).forEach(([key, value]) => {
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-    content = content.replace(regex, value);
+    content = content.replace(regex, () => value);
   });
   return content;
 }

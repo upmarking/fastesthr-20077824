@@ -37,7 +37,7 @@ function substituteVariables(html: string, vars: Record<string, string>): string
   for (const [key, value] of Object.entries(vars)) {
     // Support case-insensitive replacement for base variables
     const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-    result = result.replace(regex, value);
+    result = result.replace(regex, () => value);
   }
   
   // Auto-fix for legacy template Javascript that incorrectly parses currency symbols
