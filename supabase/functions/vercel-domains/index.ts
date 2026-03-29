@@ -99,6 +99,54 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "update_slug": {
+        const { slug } = params;
+        if (!slug || typeof slug !== "string") {
+          throw new Error("Slug is required");
+        }
+        const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+        if (cleanSlug.length < 3) {
+          throw new Error("Slug must be at least 3 characters");
+        }
+        if (["www", "app", "api", "admin", "mail", "ftp", "cdn"].includes(cleanSlug)) {
+          throw new Error("This slug is reserved");
+        }
+
+        // Check availability
+        const { data: existing } = await admin
+          .from("companies")
+          .select("id")
+          .eq("slug", cleanSlug)
+          .neq("id", companyId)
+          .maybeSingle();
+        if (existing) throw new Error("Slug already taken");
+
+        // Remove old subdomain from Vercel
+        const oldDomain = `${company.slug}.${BASE_DOMAIN}`;
+        try {
+          await vercelFetch(`/v9/projects/${VERCEL_PROJECT_ID}/domains/${oldDomain}`, { method: "DELETE" });
+        } catch (_e) { /* might not exist */ }
+
+        // Add new subdomain to Vercel
+        const newDomain = `${cleanSlug}.${BASE_DOMAIN}`;
+        try {
+          await vercelFetch(`/v10/projects/${VERCEL_PROJECT_ID}/domains`, {
+            method: "POST",
+            body: JSON.stringify({ name: newDomain }),
+          });
+        } catch (e: any) {
+          if (!e.message?.includes("already")) throw e;
+        }
+
+        // Update database
+        await admin.from("companies").update({ slug: cleanSlug }).eq("id", companyId);
+
+        return new Response(
+          JSON.stringify({ success: true, slug: cleanSlug, subdomain: newDomain }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       case "add_subdomain": {
         // Add slug.fastesthr.com to Vercel project
         const domain = `${company.slug}.${BASE_DOMAIN}`;

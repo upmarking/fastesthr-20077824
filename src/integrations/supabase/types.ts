@@ -329,7 +329,6 @@ export type Database = {
         Row: {
           candidate_user_id: string | null
           company_id: string
-          candidate_user_id: string | null
           cover_letter: string | null
           created_at: string
           email: string
@@ -348,7 +347,6 @@ export type Database = {
         Insert: {
           candidate_user_id?: string | null
           company_id: string
-          candidate_user_id?: string | null
           cover_letter?: string | null
           created_at?: string
           email: string
@@ -367,7 +365,6 @@ export type Database = {
         Update: {
           candidate_user_id?: string | null
           company_id?: string
-          candidate_user_id?: string | null
           cover_letter?: string | null
           created_at?: string
           email?: string

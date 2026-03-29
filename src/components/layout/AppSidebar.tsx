@@ -13,6 +13,8 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { NavLink } from '@/components/NavLink';
 import { useAuthStore } from '@/store/auth-store';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,6 +91,21 @@ export function AppSidebar() {
   const isSuperAdmin = profile?.platform_role === 'super_admin';
   const userRole = (profile?.platform_role || 'user') as Role;
 
+  // Fetch company data for branding
+  const { data: company } = useQuery({
+    queryKey: ['company-branding', profile?.company_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('companies')
+        .select('name, logo_url, slug')
+        .eq('id', profile!.company_id!)
+        .single();
+      return data;
+    },
+    enabled: !!profile?.company_id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const filteredFastBoard = isSuperAdmin ? fastBoardNav : (fastBoardNavMap[userRole] || []);
   const filteredManagement = isSuperAdmin ? managementNav : (managementNavMap[userRole] || []);
   const filteredAccount = isSuperAdmin ? accountNav : (accountNavMap[userRole] || []);
@@ -116,15 +133,26 @@ export function AppSidebar() {
     return labels[role] || role;
   };
 
+  const companyInitial = company?.name?.[0]?.toUpperCase() || 'F';
+  const companyName = company?.name || 'FastestHR';
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <Link to="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-            <Zap className="h-4 w-4" />
-          </div>
+          {company?.logo_url ? (
+            <img
+              src={company.logo_url}
+              alt={companyName}
+              className="h-8 w-8 shrink-0 rounded-xl object-cover ring-1 ring-border/50 transition-all duration-300 group-hover:ring-primary/50"
+            />
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground font-bold text-sm">
+              {companyInitial}
+            </div>
+          )}
           {!collapsed && (
-            <span className="text-lg font-bold tracking-tight">FastestHR</span>
+            <span className="text-lg font-bold tracking-tight truncate">{companyName}</span>
           )}
         </Link>
       </SidebarHeader>
