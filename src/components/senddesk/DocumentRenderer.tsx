@@ -25,7 +25,12 @@ export function DocumentRenderer({
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
       content = content.replace(regex, value);
     });
-    return DOMPurify.sanitize(content);
+    // Sanitize the HTML to prevent XSS vulnerabilities while allowing custom styles
+    return DOMPurify.sanitize(content, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['style'],
+      FORCE_BODY: true
+    });
   }, [htmlContent, variables]);
 
   return (
