@@ -327,6 +327,7 @@ export type Database = {
       }
       candidates: {
         Row: {
+          candidate_user_id: string | null
           company_id: string
           candidate_user_id: string | null
           cover_letter: string | null
@@ -345,6 +346,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          candidate_user_id?: string | null
           company_id: string
           candidate_user_id?: string | null
           cover_letter?: string | null
@@ -363,6 +365,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          candidate_user_id?: string | null
           company_id?: string
           candidate_user_id?: string | null
           cover_letter?: string | null
@@ -1376,6 +1379,7 @@ export type Database = {
             | Database["public"]["Enums"]["employment_type"]
             | null
           id?: string
+          job_slug?: string | null
           location?: string | null
           max_salary?: number | null
           min_salary?: number | null
@@ -1399,6 +1403,7 @@ export type Database = {
             | Database["public"]["Enums"]["employment_type"]
             | null
           id?: string
+          job_slug?: string | null
           location?: string | null
           max_salary?: number | null
           min_salary?: number | null
