@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuthStore } from '@/store/auth-store';
 import { useTheme } from '@/hooks/use-theme';
+import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
@@ -79,6 +80,9 @@ function AppRoutes() {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
+  // Detect subdomain-based company routing
+  const companySlugFromHost = getCompanySlugFromHost();
+
   // Loading fallback for lazy routes
   const LazyFallback = () => (
     <div className="flex h-64 items-center justify-center">
@@ -95,6 +99,19 @@ function AppRoutes() {
       </DashboardLayout>
     </ProtectedRoute>
   );
+
+  // If accessed via subdomain (e.g. acme.fastesthr.com) or custom domain, show company career pages
+  if (companySlugFromHost) {
+    return (
+      <Routes>
+        <Route path="/" element={<Suspense fallback={<LazyFallback />}><CompanyPage /></Suspense>} />
+        <Route path="/jobs/:jobSlug" element={<Suspense fallback={<LazyFallback />}><JobApply /></Suspense>} />
+        <Route path="/candidate/login" element={<Suspense fallback={<LazyFallback />}><CandidateLogin /></Suspense>} />
+        <Route path="/candidate/portal" element={<Suspense fallback={<LazyFallback />}><CandidatePortal /></Suspense>} />
+        <Route path="*" element={<Suspense fallback={<LazyFallback />}><CompanyPage /></Suspense>} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
