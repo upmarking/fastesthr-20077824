@@ -322,11 +322,11 @@ export default function Performance() {
                     <Badge variant="outline" className={statusColor[goal.status] || ''}>
                       {goal.status?.replace('_', ' ')}
                     </Badge>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setUpdatingGoal(updatingGoal === goal.id ? null : goal.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setUpdatingGoal(updatingGoal === goal.id ? null : goal.id)} aria-label="Update goal">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     {isAdmin && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFeedbackGoal(feedbackGoal === goal.id ? null : goal.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFeedbackGoal(feedbackGoal === goal.id ? null : goal.id)} aria-label="Add feedback">
                         <MessageSquare className="h-3.5 w-3.5" />
                       </Button>
                     )}

@@ -342,7 +342,7 @@ export default function HelpDesk() {
                   </div>
                   <div className="flex gap-2 mt-3">
                     <Input placeholder="Write a comment..." value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && commentText.trim()) addCommentMutation.mutate(); }} />
-                    <Button size="icon" onClick={() => addCommentMutation.mutate()} disabled={!commentText.trim() || addCommentMutation.isPending}>
+                    <Button size="icon" onClick={() => addCommentMutation.mutate()} disabled={!commentText.trim() || addCommentMutation.isPending} aria-label="Send comment">
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>

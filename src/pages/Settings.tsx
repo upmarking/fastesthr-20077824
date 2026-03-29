@@ -317,7 +317,7 @@ function ShiftTab({ companyId }: { companyId?: string | null }) {
                 <p className="font-medium text-sm">{shift.name}</p>
                 <p className="text-xs text-muted-foreground">{shift.start_time} — {shift.end_time} · {shift.break_minutes}min break</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => deleteShift.mutate(shift.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => deleteShift.mutate(shift.id)} aria-label="Delete shift"><Trash2 className="w-3.5 h-3.5" /></Button>
             </div>
           ))}
         </div>
@@ -373,7 +373,7 @@ function PayrollConfigTab({ companyId }: { companyId?: string | null }) {
               <Input type="number" value={slab.from} onChange={(e) => { const n = [...taxSlabs]; n[i].from = parseInt(e.target.value) || 0; setTaxSlabs(n); }} className="h-9 text-sm" />
               <Input type="number" value={slab.to} onChange={(e) => { const n = [...taxSlabs]; n[i].to = parseInt(e.target.value) || 0; setTaxSlabs(n); }} className="h-9 text-sm" />
               <Input type="number" value={slab.rate} onChange={(e) => { const n = [...taxSlabs]; n[i].rate = parseFloat(e.target.value) || 0; setTaxSlabs(n); }} className="h-9 text-sm" />
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => setTaxSlabs(taxSlabs.filter((_, j) => j !== i))} disabled={taxSlabs.length <= 1}><Trash2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => setTaxSlabs(taxSlabs.filter((_, j) => j !== i))} disabled={taxSlabs.length <= 1} aria-label="Delete tax slab"><Trash2 className="w-3 h-3" /></Button>
             </div>
           ))}
         </div>
@@ -397,7 +397,7 @@ function PayrollConfigTab({ companyId }: { companyId?: string | null }) {
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] capitalize">{b.type}</Badge>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => setBonusTypes(bonusTypes.filter((_, j) => j !== i))}><Trash2 className="w-3 h-3" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/50 hover:text-destructive" onClick={() => setBonusTypes(bonusTypes.filter((_, j) => j !== i))} aria-label="Delete bonus type"><Trash2 className="w-3 h-3" /></Button>
               </div>
             </div>
           ))}
@@ -635,10 +635,10 @@ function LeaveTypesTab({ companyId }: { companyId?: string | null }) {
                 </div>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => handleEdit(lt)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => handleEdit(lt)} aria-label="Edit leave type">
                   <Settings2 className="w-3.5 h-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(lt.id)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive hover:bg-destructive/10" onClick={() => deleteMutation.mutate(lt.id)} aria-label="Delete leave type">
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
