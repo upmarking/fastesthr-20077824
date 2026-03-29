@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 import { ArrowLeft, ArrowRight, Check, Loader2, Upload, Briefcase, MapPin, Users, DollarSign, Building2, Clock, Send, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -432,7 +433,9 @@ interface AppForm {
 const TOTAL_STEPS = 6;
 
 export default function JobApply() {
-  const { companySlug, jobSlug } = useParams<{ companySlug: string; jobSlug: string }>();
+  const { companySlug: paramSlug, jobSlug } = useParams<{ companySlug: string; jobSlug: string }>();
+  const hostSlug = getCompanySlugFromHost();
+  const companySlug = paramSlug || hostSlug;
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -444,13 +447,18 @@ export default function JobApply() {
   const { data: company } = useQuery({
     queryKey: ['public-company', companySlug],
     queryFn: async () => {
-      const { data } = await supabase
+      const isCustomDomain = hostSlug && hostSlug.includes('.');
+      let query = supabase
         .from('companies')
         .select('id, name, slug, logo_url, about_company, industry, size, country, website, linkedin_url')
-        .eq('slug', companySlug!)
         .eq('is_active', true)
-        .is('deleted_at', null)
-        .maybeSingle();
+        .is('deleted_at', null);
+      if (isCustomDomain) {
+        query = query.eq('custom_domain', hostSlug!);
+      } else {
+        query = query.eq('slug', companySlug!);
+      }
+      const { data } = await query.maybeSingle();
       return data;
     },
     enabled: !!companySlug,
