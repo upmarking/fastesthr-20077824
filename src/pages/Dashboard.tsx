@@ -7,6 +7,7 @@ import {
   Users, Clock, CalendarDays, Briefcase, DollarSign, UserPlus,
   Megaphone, TrendingUp, ArrowRight, BarChart3, PieChart, Cake, PartyPopper, TrendingDown, MessageSquare
 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -37,18 +38,75 @@ function CompanyAdminDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
 
-  const { data: employeeCount = 0, isLoading: loadingEmployees } = useQuery({
-    queryKey: ['employee-count', profile?.company_id],
+  // Batch fetching active employees to eliminate N+1 like query redundancies on the dashboard
+  const { data: activeEmployees = [], isLoading: loadingEmployees } = useQuery({
+    queryKey: ['active-employees', profile?.company_id],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from('employees')
-        .select('*', { count: 'exact', head: true })
+        .select('id, first_name, last_name, date_of_birth, date_of_joining, avatar_url, departments(name)')
         .eq('company_id', profile!.company_id!)
         .is('deleted_at', null);
-      return count || 0;
+      return data || [];
     },
     enabled: !!profile?.company_id,
   });
+
+  const employeeCount = activeEmployees.length;
+
+  const departmentStats = useMemo(() => {
+    return activeEmployees.reduce((acc: any[], emp: any) => {
+      const deptName = emp.departments?.name || 'Unassigned';
+      const existing = acc.find(d => d.name === deptName);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        acc.push({ name: deptName, count: 1 });
+      }
+      return acc;
+    }, []).sort((a: any, b: any) => b.count - a.count).slice(0, 5);
+  }, [activeEmployees]);
+
+  const thisYear = new Date().getFullYear();
+  const hiringStats = useMemo(() => {
+    const monthly: Record<number, number> = {};
+    let total = 0;
+    activeEmployees.forEach((e: any) => {
+      if (e.date_of_joining && new Date(e.date_of_joining).getFullYear() === thisYear) {
+        total++;
+        const m = new Date(e.date_of_joining).getMonth();
+        monthly[m] = (monthly[m] || 0) + 1;
+      }
+    });
+    return { total, monthly };
+  }, [activeEmployees, thisYear]);
+
+  const celebrations = useMemo(() => {
+    const now = new Date();
+    const upcomingBdays = activeEmployees.filter((e: any) => {
+      if (!e.date_of_birth) return false;
+      const dob = new Date(e.date_of_birth);
+      const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+      const diff = (bday.getTime() - now.getTime()) / (1000*60*60*24);
+      return diff >= 0 && diff <= 30;
+    }).sort((a: any, b: any) => {
+      const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
+      return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+    }).slice(0, 5);
+
+    const upcomingAnnis = activeEmployees.filter((e: any) => {
+      if (!e.date_of_joining) return false;
+      const doj = new Date(e.date_of_joining);
+      const anni = new Date(now.getFullYear(), doj.getMonth(), doj.getDate());
+      const diff = (anni.getTime() - now.getTime()) / (1000*60*60*24);
+      return diff >= 0 && diff <= 30 && now.getFullYear() > doj.getFullYear();
+    }).sort((a: any, b: any) => {
+      const da = new Date(a.date_of_joining), db = new Date(b.date_of_joining);
+      return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+    }).slice(0, 5);
+
+    return { birthdays: upcomingBdays, anniversaries: upcomingAnnis };
+  }, [activeEmployees]);
 
   const { data: leaveRequests = [], isLoading: loadingLeave } = useQuery({
     queryKey: ['pending-leaves', profile?.company_id],
@@ -91,21 +149,6 @@ function CompanyAdminDashboard() {
     enabled: !!profile?.company_id,
   });
 
-  const { data: departmentStats = [] } = useQuery({
-    queryKey: ['dept-stats', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('departments(name)')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null);
-      const map: Record<string, number> = {};
-      (data || []).forEach((e: any) => { const n = e.departments?.name || 'Unassigned'; map[n] = (map[n] || 0) + 1; });
-      return Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
-    },
-    enabled: !!profile?.company_id,
-  });
-
   const { data: payrollSummary } = useQuery({
     queryKey: ['payroll-summary', profile?.company_id],
     queryFn: async () => {
@@ -121,31 +164,6 @@ function CompanyAdminDashboard() {
     enabled: !!profile?.company_id,
   });
 
-  // Hiring stats — employees joined this year
-  const thisYear = new Date().getFullYear();
-  const { data: hiringStats } = useQuery({
-    queryKey: ['hiring-stats', profile?.company_id, thisYear],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('date_of_joining')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null)
-        .gte('date_of_joining', `${thisYear}-01-01`)
-        .lte('date_of_joining', `${thisYear}-12-31`);
-
-      const monthly: Record<number, number> = {};
-      (data || []).forEach((e: any) => {
-        if (e.date_of_joining) {
-          const m = new Date(e.date_of_joining).getMonth();
-          monthly[m] = (monthly[m] || 0) + 1;
-        }
-      });
-      return { total: (data || []).length, monthly };
-    },
-    enabled: !!profile?.company_id,
-  });
-
   // Attrition — count of employees with deleted_at this year
   const { data: attritionCount = 0 } = useQuery({
     queryKey: ['attrition', profile?.company_id, thisYear],
@@ -157,42 +175,6 @@ function CompanyAdminDashboard() {
         .not('deleted_at', 'is', null)
         .gte('deleted_at', `${thisYear}-01-01T00:00:00Z`);
       return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  // Birthdays & Anniversaries
-  const { data: celebrations = { birthdays: [], anniversaries: [] } } = useQuery({
-    queryKey: ['celebrations', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name, date_of_birth, date_of_joining, avatar_url')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null);
-      if (!data) return { birthdays: [], anniversaries: [] };
-      const now = new Date();
-      const upcomingBdays = data.filter((e: any) => {
-        if (!e.date_of_birth) return false;
-        const dob = new Date(e.date_of_birth);
-        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-        const diff = (bday.getTime() - now.getTime()) / (1000*60*60*24);
-        return diff >= 0 && diff <= 30;
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
-      const upcomingAnnis = data.filter((e: any) => {
-        if (!e.date_of_joining) return false;
-        const doj = new Date(e.date_of_joining);
-        const anni = new Date(now.getFullYear(), doj.getMonth(), doj.getDate());
-        const diff = (anni.getTime() - now.getTime()) / (1000*60*60*24);
-        return diff >= 0 && diff <= 30 && now.getFullYear() > doj.getFullYear();
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_joining), db = new Date(b.date_of_joining);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
-      return { birthdays: upcomingBdays, anniversaries: upcomingAnnis };
     },
     enabled: !!profile?.company_id,
   });
@@ -606,14 +588,34 @@ function HRManagerDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
 
-  const { data: employeeCount = 0 } = useQuery({
-    queryKey: ['employee-count', profile?.company_id],
+  const { data: activeEmployees = [] } = useQuery({
+    queryKey: ['active-employees', profile?.company_id],
     queryFn: async () => {
-      const { count } = await supabase.from('employees').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).is('deleted_at', null);
-      return count || 0;
+      const { data } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, date_of_birth, avatar_url')
+        .eq('company_id', profile!.company_id!)
+        .is('deleted_at', null);
+      return data || [];
     },
     enabled: !!profile?.company_id,
   });
+
+  const employeeCount = activeEmployees.length;
+
+  const birthdays = useMemo(() => {
+    const now = new Date();
+    return activeEmployees.filter((e: any) => {
+      if (!e.date_of_birth) return false;
+      const dob = new Date(e.date_of_birth);
+      const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+      const diff = (bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+      return diff >= 0 && diff <= 30;
+    }).sort((a: any, b: any) => {
+      const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
+      return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+    }).slice(0, 5);
+  }, [activeEmployees]);
 
   const { data: pendingLeaves = [] } = useQuery({
     queryKey: ['pending-leaves', profile?.company_id],
@@ -629,25 +631,6 @@ function HRManagerDashboard() {
     queryFn: async () => {
       const { count } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).in('status', ['open', 'in_progress']);
       return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  const { data: birthdays = [] } = useQuery({
-    queryKey: ['upcoming-birthdays', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase.from('employees').select('id, first_name, last_name, date_of_birth, avatar_url').eq('company_id', profile!.company_id!).is('deleted_at', null).not('date_of_birth', 'is', null);
-      if (!data) return [];
-      const now = new Date();
-      return data.filter((e: any) => {
-        const dob = new Date(e.date_of_birth);
-        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-        const diff = (bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-        return diff >= 0 && diff <= 30;
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
     },
     enabled: !!profile?.company_id,
   });
