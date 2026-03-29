@@ -327,6 +327,7 @@ export type Database = {
       }
       candidates: {
         Row: {
+          candidate_user_id: string | null
           company_id: string
           cover_letter: string | null
           created_at: string
@@ -344,6 +345,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          candidate_user_id?: string | null
           company_id: string
           cover_letter?: string | null
           created_at?: string
@@ -361,6 +363,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          candidate_user_id?: string | null
           company_id?: string
           cover_letter?: string | null
           created_at?: string
@@ -396,6 +399,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          about_company: string | null
           compensation_structure: Json | null
           country: string | null
           created_at: string
@@ -408,6 +412,7 @@ export type Database = {
           industry: string | null
           is_active: boolean | null
           license_limit: number | null
+          linkedin_url: string | null
           logo_url: string | null
           name: string
           offer_sequence_current: number | null
@@ -429,9 +434,11 @@ export type Database = {
           timezone: string | null
           updated_at: string
           wallet_balance: number | null
+          website: string | null
           work_days: string[] | null
         }
         Insert: {
+          about_company?: string | null
           compensation_structure?: Json | null
           country?: string | null
           created_at?: string
@@ -444,6 +451,7 @@ export type Database = {
           industry?: string | null
           is_active?: boolean | null
           license_limit?: number | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name: string
           offer_sequence_current?: number | null
@@ -465,9 +473,11 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           wallet_balance?: number | null
+          website?: string | null
           work_days?: string[] | null
         }
         Update: {
+          about_company?: string | null
           compensation_structure?: Json | null
           country?: string | null
           created_at?: string
@@ -480,6 +490,7 @@ export type Database = {
           industry?: string | null
           is_active?: boolean | null
           license_limit?: number | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name?: string
           offer_sequence_current?: number | null
@@ -501,6 +512,7 @@ export type Database = {
           timezone?: string | null
           updated_at?: string
           wallet_balance?: number | null
+          website?: string | null
           work_days?: string[] | null
         }
         Relationships: []
@@ -1340,6 +1352,7 @@ export type Database = {
           description: string | null
           employment_type: Database["public"]["Enums"]["employment_type"] | null
           id: string
+          job_slug: string | null
           location: string | null
           max_salary: number | null
           min_salary: number | null
@@ -1363,6 +1376,7 @@ export type Database = {
             | Database["public"]["Enums"]["employment_type"]
             | null
           id?: string
+          job_slug?: string | null
           location?: string | null
           max_salary?: number | null
           min_salary?: number | null
@@ -1386,6 +1400,7 @@ export type Database = {
             | Database["public"]["Enums"]["employment_type"]
             | null
           id?: string
+          job_slug?: string | null
           location?: string | null
           max_salary?: number | null
           min_salary?: number | null
