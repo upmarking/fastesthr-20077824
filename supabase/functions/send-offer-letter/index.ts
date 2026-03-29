@@ -3,7 +3,7 @@ import * as nodemailer from "npm:nodemailer@6.9.8";
 import { Buffer } from "node:buffer";
 
 // Polyfill Buffer for nodemailer running in Deno
-(globalThis as any).Buffer = Buffer;
+(globalThis as unknown as { Buffer: typeof Buffer }).Buffer = Buffer;
 
 const allowedOrigins = [
   'https://fastesthre.com',
@@ -32,6 +32,25 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Authentication and authorization checks
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { 
       candidate_id, 
       job_id, 
@@ -46,6 +65,20 @@ Deno.serve(async (req) => {
 
     if (!candidate_id || !job_id || !company_id || !pdf_path || !html_content) {
       throw new Error('Missing required fields');
+    }
+
+    // Verify user profile company_id matches requested company_id
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('company_id')
+      .eq('id', userData.user.id)
+      .single();
+
+    if (!profile || profile.company_id !== company_id) {
+      return new Response(JSON.stringify({ error: 'Unauthorized: Company mismatch' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // 1. Fetch company settings
@@ -242,9 +275,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Offer Letter Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
