@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { ArrowLeft, Clock, Zap, Share2, Bookmark } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 import { BLOGS, BlogPost as BlogPostType } from '@/data/blogs';
 
