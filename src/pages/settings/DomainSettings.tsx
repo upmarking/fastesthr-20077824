@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Globe, Copy, ExternalLink, RefreshCw, Trash2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Globe, Copy, ExternalLink, RefreshCw, Trash2, Loader2, CheckCircle2, AlertCircle, Pencil, Check, X } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,10 @@ export default function DomainSettings() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [customDomainInput, setCustomDomainInput] = useState('');
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugInput, setSlugInput] = useState('');
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [checkingSlug, setCheckingSlug] = useState(false);
 
   const { data: domainStatus, isLoading } = useQuery({
     queryKey: ['domain-status', profile?.company_id],
@@ -33,6 +37,50 @@ export default function DomainSettings() {
       };
     },
     enabled: !!profile?.company_id,
+  });
+
+  // Debounced slug availability check
+  useEffect(() => {
+    if (!editingSlug || !slugInput.trim() || slugInput === domainStatus?.slug) {
+      setSlugAvailable(null);
+      return;
+    }
+    setCheckingSlug(true);
+    const timer = setTimeout(async () => {
+      const clean = slugInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (clean.length < 3) {
+        setSlugAvailable(false);
+        setCheckingSlug(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('slug', clean)
+        .neq('id', profile?.company_id || '')
+        .maybeSingle();
+      setSlugAvailable(!data);
+      setCheckingSlug(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [slugInput, editingSlug, domainStatus?.slug, profile?.company_id]);
+
+  const updateSlug = useMutation({
+    mutationFn: async (newSlug: string) => {
+      const { data, error } = await supabase.functions.invoke('vercel-domains', {
+        body: { action: 'update_slug', slug: newSlug },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['domain-status'] });
+      queryClient.invalidateQueries({ queryKey: ['company-branding'] });
+      setEditingSlug(false);
+      toast.success('Workspace URL updated!');
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to update slug'),
   });
 
   const addCustomDomain = useMutation({
@@ -97,6 +145,21 @@ export default function DomainSettings() {
     window.open(`https://${url}`, '_blank');
   };
 
+  const handleStartEditSlug = () => {
+    setSlugInput(domainStatus?.slug || '');
+    setEditingSlug(true);
+    setSlugAvailable(null);
+  };
+
+  const handleSaveSlug = () => {
+    const clean = slugInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (clean.length < 3) {
+      toast.error('Slug must be at least 3 characters');
+      return;
+    }
+    updateSlug.mutate(clean);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -125,32 +188,94 @@ export default function DomainSettings() {
           <CardTitle className="text-sm font-medium text-muted-foreground">Default Workspace URL</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center bg-background border border-border/50 rounded-lg overflow-hidden">
-              <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">
-                {domainStatus?.slug || '...'}
+          {editingSlug ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center bg-background border border-border/50 rounded-lg overflow-hidden">
+                  <Input
+                    value={slugInput}
+                    onChange={(e) => setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    className="border-0 font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+                    placeholder="your-company"
+                    autoFocus
+                  />
+                  <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50 whitespace-nowrap">
+                    .{BASE_DOMAIN}
+                  </div>
+                </div>
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={handleSaveSlug}
+                  disabled={!slugAvailable || updateSlug.isPending || checkingSlug}
+                >
+                  {updateSlug.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => setEditingSlug(false)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
-              <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">
-                .{BASE_DOMAIN}
-              </div>
+              {slugInput && slugInput !== domainStatus?.slug && (
+                <div className="flex items-center gap-2 text-xs">
+                  {checkingSlug ? (
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking availability...
+                    </span>
+                  ) : slugAvailable === true ? (
+                    <span className="text-emerald-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Available
+                    </span>
+                  ) : slugAvailable === false ? (
+                    <span className="text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> {slugInput.length < 3 ? 'Min 3 characters' : 'Already taken'}
+                    </span>
+                  ) : null}
+                </div>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center bg-background border border-border/50 rounded-lg overflow-hidden">
+                <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">
+                  {domainStatus?.slug || '...'}
+                </div>
+                <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">
+                  .{BASE_DOMAIN}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={handleStartEditSlug}
+                title="Edit slug"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -180,7 +305,6 @@ export default function DomainSettings() {
         <CardContent className="space-y-4">
           {domainStatus?.custom_domain ? (
             <>
-              {/* Existing domain display */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-background border border-border/50 rounded-lg px-4 py-2.5 font-mono text-sm text-foreground">
                   {domainStatus.custom_domain}
@@ -204,7 +328,6 @@ export default function DomainSettings() {
                 </Button>
               </div>
 
-              {/* Remove button */}
               <Button
                 variant="destructive"
                 className="w-full gap-2"
@@ -219,7 +342,6 @@ export default function DomainSettings() {
                 Remove
               </Button>
 
-              {/* DNS Configuration */}
               {records.length > 0 && (
                 <div className="border border-border/50 rounded-lg overflow-hidden">
                   <div className="px-4 py-2 bg-muted/30 border-b border-border/50">
@@ -261,7 +383,6 @@ export default function DomainSettings() {
               )}
             </>
           ) : (
-            /* Add new custom domain */
             <div className="flex items-center gap-2">
               <Input
                 placeholder="yourdomain.com"
