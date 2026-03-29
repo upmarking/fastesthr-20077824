@@ -37,18 +37,87 @@ function CompanyAdminDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
 
-  const { data: employeeCount = 0, isLoading: loadingEmployees } = useQuery({
-    queryKey: ['employee-count', profile?.company_id],
+  const thisYear = new Date().getFullYear();
+
+  // Combine multiple employee-related queries into one
+  const { data: employeeData, isLoading: loadingEmployees } = useQuery({
+    queryKey: ['employee-metrics', profile?.company_id, thisYear],
     queryFn: async () => {
-      const { count } = await supabase
+      const { data } = await supabase
         .from('employees')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null);
-      return count || 0;
+        .select('id, first_name, last_name, date_of_birth, date_of_joining, avatar_url, deleted_at, departments(name)')
+        .eq('company_id', profile!.company_id!);
+
+      const allEmployees = data || [];
+      const activeEmployees = allEmployees.filter(e => e.deleted_at === null);
+
+      const employeeCount = activeEmployees.length;
+
+      const deptMap: Record<string, number> = {};
+      activeEmployees.forEach((e: any) => {
+        const n = e.departments?.name || 'Unassigned';
+        deptMap[n] = (deptMap[n] || 0) + 1;
+      });
+      const departmentStats = Object.entries(deptMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const monthlyHires: Record<number, number> = {};
+      const thisYearHires = activeEmployees.filter(e => {
+        if (!e.date_of_joining) return false;
+        const year = new Date(e.date_of_joining).getFullYear();
+        return year === thisYear;
+      });
+      thisYearHires.forEach(e => {
+        const m = new Date(e.date_of_joining!).getMonth();
+        monthlyHires[m] = (monthlyHires[m] || 0) + 1;
+      });
+      const hiringStats = { total: thisYearHires.length, monthly: monthlyHires };
+
+      const attritionCount = allEmployees.filter(e => e.deleted_at && new Date(e.deleted_at).getFullYear() === thisYear).length;
+
+      const now = new Date();
+      const upcomingBdays = activeEmployees.filter((e: any) => {
+        if (!e.date_of_birth) return false;
+        const dob = new Date(e.date_of_birth);
+        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        const diff = (bday.getTime() - now.getTime()) / (1000*60*60*24);
+        return diff >= 0 && diff <= 30;
+      }).sort((a: any, b: any) => {
+        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
+        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+      }).slice(0, 5);
+
+      const upcomingAnnis = activeEmployees.filter((e: any) => {
+        if (!e.date_of_joining) return false;
+        const doj = new Date(e.date_of_joining);
+        const anni = new Date(now.getFullYear(), doj.getMonth(), doj.getDate());
+        const diff = (anni.getTime() - now.getTime()) / (1000*60*60*24);
+        return diff >= 0 && diff <= 30 && now.getFullYear() > doj.getFullYear();
+      }).sort((a: any, b: any) => {
+        const da = new Date(a.date_of_joining), db = new Date(b.date_of_joining);
+        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+      }).slice(0, 5);
+
+      const celebrations = { birthdays: upcomingBdays, anniversaries: upcomingAnnis };
+
+      return {
+        employeeCount,
+        departmentStats,
+        hiringStats,
+        attritionCount,
+        celebrations
+      };
     },
     enabled: !!profile?.company_id,
   });
+
+  const employeeCount = employeeData?.employeeCount || 0;
+  const departmentStats = employeeData?.departmentStats || [];
+  const hiringStats = employeeData?.hiringStats || { total: 0, monthly: {} };
+  const attritionCount = employeeData?.attritionCount || 0;
+  const celebrations = employeeData?.celebrations || { birthdays: [], anniversaries: [] };
 
   const { data: leaveRequests = [], isLoading: loadingLeave } = useQuery({
     queryKey: ['pending-leaves', profile?.company_id],
@@ -91,21 +160,6 @@ function CompanyAdminDashboard() {
     enabled: !!profile?.company_id,
   });
 
-  const { data: departmentStats = [] } = useQuery({
-    queryKey: ['dept-stats', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('departments(name)')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null);
-      const map: Record<string, number> = {};
-      (data || []).forEach((e: any) => { const n = e.departments?.name || 'Unassigned'; map[n] = (map[n] || 0) + 1; });
-      return Object.entries(map).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
-    },
-    enabled: !!profile?.company_id,
-  });
-
   const { data: payrollSummary } = useQuery({
     queryKey: ['payroll-summary', profile?.company_id],
     queryFn: async () => {
@@ -121,83 +175,7 @@ function CompanyAdminDashboard() {
     enabled: !!profile?.company_id,
   });
 
-  // Hiring stats — employees joined this year
-  const thisYear = new Date().getFullYear();
-  const { data: hiringStats } = useQuery({
-    queryKey: ['hiring-stats', profile?.company_id, thisYear],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('date_of_joining')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null)
-        .gte('date_of_joining', `${thisYear}-01-01`)
-        .lte('date_of_joining', `${thisYear}-12-31`);
-
-      const monthly: Record<number, number> = {};
-      (data || []).forEach((e: any) => {
-        if (e.date_of_joining) {
-          const m = new Date(e.date_of_joining).getMonth();
-          monthly[m] = (monthly[m] || 0) + 1;
-        }
-      });
-      return { total: (data || []).length, monthly };
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  // Attrition — count of employees with deleted_at this year
-  const { data: attritionCount = 0 } = useQuery({
-    queryKey: ['attrition', profile?.company_id, thisYear],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('employees')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', profile!.company_id!)
-        .not('deleted_at', 'is', null)
-        .gte('deleted_at', `${thisYear}-01-01T00:00:00Z`);
-      return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  // Birthdays & Anniversaries
-  const { data: celebrations = { birthdays: [], anniversaries: [] } } = useQuery({
-    queryKey: ['celebrations', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name, date_of_birth, date_of_joining, avatar_url')
-        .eq('company_id', profile!.company_id!)
-        .is('deleted_at', null);
-      if (!data) return { birthdays: [], anniversaries: [] };
-      const now = new Date();
-      const upcomingBdays = data.filter((e: any) => {
-        if (!e.date_of_birth) return false;
-        const dob = new Date(e.date_of_birth);
-        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-        const diff = (bday.getTime() - now.getTime()) / (1000*60*60*24);
-        return diff >= 0 && diff <= 30;
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
-      const upcomingAnnis = data.filter((e: any) => {
-        if (!e.date_of_joining) return false;
-        const doj = new Date(e.date_of_joining);
-        const anni = new Date(now.getFullYear(), doj.getMonth(), doj.getDate());
-        const diff = (anni.getTime() - now.getTime()) / (1000*60*60*24);
-        return diff >= 0 && diff <= 30 && now.getFullYear() > doj.getFullYear();
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_joining), db = new Date(b.date_of_joining);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
-      return { birthdays: upcomingBdays, anniversaries: upcomingAnnis };
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  const attritionRate = employeeCount > 0 ? ((attritionCount as number) / ((employeeCount as number) + (attritionCount as number)) * 100).toFixed(1) : '0.0';
+  const attritionRate = employeeCount > 0 ? (attritionCount / (employeeCount + attritionCount) * 100).toFixed(1) : '0.0';
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   return (
@@ -606,14 +584,37 @@ function HRManagerDashboard() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
 
-  const { data: employeeCount = 0 } = useQuery({
-    queryKey: ['employee-count', profile?.company_id],
+  const { data: employeeData, isLoading: loadingEmployees } = useQuery({
+    queryKey: ['hr-employee-metrics', profile?.company_id],
     queryFn: async () => {
-      const { count } = await supabase.from('employees').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).is('deleted_at', null);
-      return count || 0;
+      const { data } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, date_of_birth, avatar_url, deleted_at')
+        .eq('company_id', profile!.company_id!)
+        .is('deleted_at', null);
+
+      const activeEmployees = data || [];
+      const employeeCount = activeEmployees.length;
+
+      const now = new Date();
+      const birthdays = activeEmployees.filter((e: any) => {
+        if (!e.date_of_birth) return false;
+        const dob = new Date(e.date_of_birth);
+        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        const diff = (bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+        return diff >= 0 && diff <= 30;
+      }).sort((a: any, b: any) => {
+        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
+        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
+      }).slice(0, 5);
+
+      return { employeeCount, birthdays };
     },
     enabled: !!profile?.company_id,
   });
+
+  const employeeCount = employeeData?.employeeCount || 0;
+  const birthdays = employeeData?.birthdays || [];
 
   const { data: pendingLeaves = [] } = useQuery({
     queryKey: ['pending-leaves', profile?.company_id],
@@ -629,25 +630,6 @@ function HRManagerDashboard() {
     queryFn: async () => {
       const { count } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).in('status', ['open', 'in_progress']);
       return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  const { data: birthdays = [] } = useQuery({
-    queryKey: ['upcoming-birthdays', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase.from('employees').select('id, first_name, last_name, date_of_birth, avatar_url').eq('company_id', profile!.company_id!).is('deleted_at', null).not('date_of_birth', 'is', null);
-      if (!data) return [];
-      const now = new Date();
-      return data.filter((e: any) => {
-        const dob = new Date(e.date_of_birth);
-        const bday = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
-        const diff = (bday.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-        return diff >= 0 && diff <= 30;
-      }).sort((a: any, b: any) => {
-        const da = new Date(a.date_of_birth), db = new Date(b.date_of_birth);
-        return new Date(now.getFullYear(), da.getMonth(), da.getDate()).getTime() - new Date(now.getFullYear(), db.getMonth(), db.getDate()).getTime();
-      }).slice(0, 5);
     },
     enabled: !!profile?.company_id,
   });
