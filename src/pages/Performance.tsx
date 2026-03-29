@@ -24,6 +24,16 @@ interface GoalForm {
 }
 const emptyGoalForm: GoalForm = { title: '', description: '', due_date: '', type: 'individual' };
 
+// ⚡ Bolt: Hoisted static object configuration outside of component body
+// to prevent unnecessary memory reallocation on every render.
+const statusColor: Record<string, string> = {
+  active: 'border-success text-success bg-success/10',
+  on_track: 'border-success text-success bg-success/10',
+  at_risk: 'border-warning text-warning bg-warning/10',
+  completed: 'border-info text-info bg-info/10',
+  missed: 'border-destructive text-destructive bg-destructive/10',
+};
+
 export default function Performance() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
@@ -146,14 +156,6 @@ export default function Performance() {
   const activeGoals = goals.filter((g: any) => g.status === 'active' || g.status === 'on_track' || g.status === 'at_risk');
   const completedGoals = goals.filter((g: any) => g.status === 'completed');
   const avgProgress = goals.length > 0 ? Math.round(goals.reduce((s: number, g: any) => s + (g.progress || 0), 0) / goals.length) : 0;
-
-  const statusColor: Record<string, string> = {
-    active: 'border-success text-success bg-success/10',
-    on_track: 'border-success text-success bg-success/10',
-    at_risk: 'border-warning text-warning bg-warning/10',
-    completed: 'border-info text-info bg-info/10',
-    missed: 'border-destructive text-destructive bg-destructive/10',
-  };
 
   return (
     <div className="space-y-6">
