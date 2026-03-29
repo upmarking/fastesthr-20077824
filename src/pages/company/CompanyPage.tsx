@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, MapPin, Users, Globe, Linkedin, Building2, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 
 const HERO_GRADIENT = 'linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%)';
 
@@ -22,18 +23,31 @@ const WORK_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function CompanyPage() {
-  const { companySlug } = useParams<{ companySlug: string }>();
+  const { companySlug: paramSlug } = useParams<{ companySlug: string }>();
+  const hostSlug = getCompanySlugFromHost();
+  // Use subdomain slug if present, otherwise use URL param
+  const companySlug = paramSlug || hostSlug;
+  const isSubdomain = !!hostSlug && !paramSlug;
 
   const { data: company, isLoading: loadingCompany } = useQuery({
     queryKey: ['public-company', companySlug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // If accessed via custom domain (not a slug pattern), look up by custom_domain
+      const isCustomDomain = hostSlug && hostSlug.includes('.');
+      
+      let query = supabase
         .from('companies')
         .select('id, name, slug, logo_url, about_company, industry, size, country, website, linkedin_url')
-        .eq('slug', companySlug!)
         .eq('is_active', true)
-        .is('deleted_at', null)
-        .maybeSingle();
+        .is('deleted_at', null);
+      
+      if (isCustomDomain) {
+        query = query.eq('custom_domain', hostSlug!);
+      } else {
+        query = query.eq('slug', companySlug!);
+      }
+      
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -207,7 +221,7 @@ export default function CompanyPage() {
             {jobs.map((job: any) => (
               <Link
                 key={job.id}
-                to={`/company/${companySlug}/jobs/${job.job_slug || job.id}`}
+                to={isSubdomain ? `/jobs/${job.job_slug || job.id}` : `/company/${companySlug}/jobs/${job.job_slug || job.id}`}
                 className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.04] hover:border-white/[0.12] transition-all duration-300"
               >
                 {/* Arrow */}
