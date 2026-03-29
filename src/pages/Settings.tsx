@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ export default function Settings() {
 
   const [form, setForm] = useState({ 
     name: '', timezone: '', currency: '', country: '',
+    about_company: '', website: '', linkedin_url: '',
     smtp_host: '', smtp_port: '', smtp_user: '', smtp_pass: '', smtp_from_email: '', smtp_from_name: '',
     offer_sequence_prefix: '', offer_sequence_current: '0'
   });
@@ -40,6 +42,7 @@ export default function Settings() {
       const c = company as any;
       setForm({
         name: c.name || '', timezone: c.timezone || 'UTC', currency: c.currency || 'USD', country: c.country || '',
+        about_company: c.about_company || '', website: c.website || '', linkedin_url: c.linkedin_url || '',
         smtp_host: c.smtp_host || '', smtp_port: c.smtp_port?.toString() || '', smtp_user: c.smtp_user || '', smtp_pass: c.smtp_pass || '',
         smtp_from_email: c.smtp_from_email || '', smtp_from_name: c.smtp_from_name || '',
         offer_sequence_prefix: c.offer_sequence_prefix || 'OFFER-', offer_sequence_current: c.offer_sequence_current?.toString() || '0',
@@ -52,6 +55,7 @@ export default function Settings() {
       if (!profile?.company_id) throw new Error("Company ID is missing.");
       const { error } = await supabase.from('companies').update({
         name: form.name, timezone: form.timezone, currency: form.currency, country: form.country,
+        about_company: form.about_company || null, website: form.website || null, linkedin_url: form.linkedin_url || null,
         smtp_host: form.smtp_host || null, smtp_port: form.smtp_port ? parseInt(form.smtp_port) : null,
         smtp_user: form.smtp_user || null, smtp_pass: form.smtp_pass || null,
         smtp_from_email: form.smtp_from_email || null, smtp_from_name: form.smtp_from_name || null,
@@ -197,6 +201,37 @@ function GeneralTab({ form, setForm, company }: any) {
           <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="INR">INR (₹)</option>
           <option value="AED">AED (د.إ)</option><option value="CAD">CAD (C$)</option><option value="AUD">AUD (A$)</option><option value="JPY">JPY (¥)</option>
         </select>
+      </div>
+    </div>
+    <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-border/50">
+      <div className="space-y-2 md:col-span-2">
+        <label className="text-xs font-medium text-muted-foreground uppercase">About Company (Public Career Page)</label>
+        <Textarea 
+          placeholder="Describe your company for potential candidates..."
+          value={form.about_company} 
+          onChange={(e: any) => setForm((f: any) => ({ ...f, about_company: e.target.value }))} 
+          className="bg-background/50 border-border/50 min-h-[100px]" 
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground uppercase">Website URL</label>
+        <Input 
+          type="url"
+          placeholder="https://example.com"
+          value={form.website} 
+          onChange={(e: any) => setForm((f: any) => ({ ...f, website: e.target.value }))} 
+          className="bg-background/50 border-border/50 h-10" 
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground uppercase">LinkedIn URL</label>
+        <Input 
+          type="url"
+          placeholder="https://linkedin.com/company/example"
+          value={form.linkedin_url} 
+          onChange={(e: any) => setForm((f: any) => ({ ...f, linkedin_url: e.target.value }))} 
+          className="bg-background/50 border-border/50 h-10" 
+        />
       </div>
     </div>
     <div className="pt-6 border-t border-border/50">

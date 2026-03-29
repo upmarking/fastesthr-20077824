@@ -46,6 +46,10 @@ const NewEmployee = lazy(() => import('@/pages/employees/NewEmployee'));
 const EmployeeDetail = lazy(() => import('@/pages/employees/EmployeeDetail'));
 const ApplyLeave = lazy(() => import('@/pages/leaves/ApplyLeave'));
 const NewJob = lazy(() => import('@/pages/recruitment/NewJob'));
+const CompanyPage = lazy(() => import('@/pages/company/CompanyPage'));
+const JobApply = lazy(() => import('@/pages/company/JobApply'));
+const CandidateLogin = lazy(() => import('@/pages/candidate/CandidateLogin'));
+const CandidatePortal = lazy(() => import('@/pages/candidate/CandidatePortal'));
 
 import PlaceholderPage from '@/pages/PlaceholderPage';
 import NotFound from '@/pages/NotFound';
@@ -103,6 +107,14 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/offer/:token" element={<OfferView />} />
+
+      {/* Company Career Pages */}
+      <Route path="/company/:companySlug" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CompanyPage /></Suspense>} />
+      <Route path="/company/:companySlug/jobs/:jobSlug" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><JobApply /></Suspense>} />
+
+      {/* Candidate Portal */}
+      <Route path="/candidate/login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CandidateLogin /></Suspense>} />
+      <Route path="/candidate/portal" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CandidatePortal /></Suspense>} />
 
 
       {/* Core HR modules */}

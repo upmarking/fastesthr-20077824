@@ -329,6 +329,7 @@ export default function NewJob() {
 
   const [form, setForm] = useState({
     title: '',
+    job_slug: '',
     department_id: '',
     is_new_department: false,
     new_department_name: '',
@@ -385,6 +386,7 @@ export default function NewJob() {
         min_salary: jobData.min_salary?.toString() || '',
         max_salary: jobData.max_salary?.toString() || '',
         openings: jobData.openings?.toString() || '1',
+        job_slug: jobData.job_slug || '',
       });
       if ((jobData as any).pipeline_stages) {
         setPipelineStages((jobData as any).pipeline_stages);
@@ -445,6 +447,7 @@ export default function NewJob() {
       const jobPayload = {
         company_id: companyId,
         title: form.title,
+        job_slug: form.job_slug.trim() || form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
         department_id: deptId,
         location: form.location || null,
         employment_type: form.employment_type,
@@ -614,6 +617,16 @@ export default function NewJob() {
                 value={form.title}
                 onChange={handleChange}
               />
+            </div>
+            <div className="sm:col-span-2 space-y-1">
+              <Field 
+                label="Job Slug (Career Page URL)" 
+                name="job_slug" 
+                placeholder="senior-frontend-engineer (Leave blank to auto-generate)" 
+                value={form.job_slug}
+                onChange={handleChange}
+              />
+              <p className="text-[10px] text-muted-foreground ml-1">This will be the URL for this job: /jobs/[job-slug]</p>
             </div>
             <div className="space-y-4">
               <SelectField

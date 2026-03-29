@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, Users, Plus, Loader2, Send, Star, Pencil } from 'lucide-react';
+import { Briefcase, Users, Plus, Loader2, Send, Star, Pencil, Share2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OfferTemplateList } from '@/components/recruitment/OfferTemplateEditor';
 import { EditScoreDialog } from '@/components/recruitment/EditScoreDialog';
+import { toast } from 'sonner';
 
 
 const STAGE_COLORS: Record<string, string> = {
@@ -49,7 +50,7 @@ export default function Recruitment() {
     queryFn: async () => {
       const { data } = await supabase
         .from('jobs')
-        .select('*, departments(name)')
+        .select('*, departments(name), companies(slug, custom_domain)')
         .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false });
       return data || [];
@@ -94,11 +95,32 @@ export default function Recruitment() {
           <p className="text-muted-foreground mt-1 text-sm">Manage job postings and candidate pipeline</p>
         </div>
         <div className="flex gap-3">
+          {activeJobData && (
+            <Button variant="outline" onClick={() => {
+              const c = (activeJobData as any).companies;
+              const slug = activeJobData.job_slug || activeJobData.id;
+              const url = c?.custom_domain 
+                ? `https://${c.custom_domain}/jobs/${slug}` 
+                : `${window.location.origin}/company/${c?.slug}/jobs/${slug}`;
+              
+              navigator.clipboard.writeText(url);
+              toast.success('Job link copied to clipboard');
+            }}>
+              <Share2 className="w-4 h-4 mr-2" /> Share Job
+            </Button>
+          )}
+          {activeJobData && (
+            <Button variant="outline" asChild>
+              <a href={(activeJobData as any).companies?.custom_domain ? `https://${(activeJobData as any).companies.custom_domain}/jobs/${activeJobData.job_slug || activeJobData.id}` : `/company/${(activeJobData as any).companies?.slug}/jobs/${activeJobData.job_slug || activeJobData.id}`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4 mr-2" /> Career Page
+              </a>
+            </Button>
+          )}
           {activeJob && (
             <AddCandidateDialog 
               jobId={activeJob} 
             />
-          ) as any}
+          )}
         </div>
       </div>
 
