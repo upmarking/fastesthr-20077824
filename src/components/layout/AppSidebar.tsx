@@ -23,7 +23,7 @@ type Role = 'super_admin' | 'company_admin' | 'hr_manager' | 'recruiter' | 'user
 interface NavItem {
   title: string;
   url: string;
-  icon: any;
+  icon: React.ElementType;
   roles: Role[]; // which roles can see this item
   subItems?: Omit<NavItem, 'icon' | 'subItems'>[];
 }
@@ -297,7 +297,7 @@ export function AppSidebar() {
             </div>
           )}
           {!collapsed && (
-            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={signOut}>
+            <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={signOut} aria-label="Sign out" title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           )}
