@@ -171,6 +171,27 @@ export default function DomainSettings() {
   const config = domainStatus?.domain_config;
   const records = config?.records || [];
 
+  // Compute correct CNAME host from custom domain
+  // e.g. hr.weskill.org → host is "hr", app.example.com → host is "app", example.com → host is "@"
+  const getCnameHost = (domain: string | null | undefined) => {
+    if (!domain) return '@';
+    const parts = domain.split('.');
+    // If 3+ parts like hr.weskill.org, the host is the subdomain prefix
+    if (parts.length > 2) {
+      return parts.slice(0, parts.length - 2).join('.');
+    }
+    return '@';
+  };
+
+  // Build display records with corrected CNAME host
+  const displayRecords = records.map((record: any) => {
+    if (record.type === 'CNAME') {
+      return { ...record, host: getCnameHost(domainStatus?.custom_domain) };
+    }
+    // For TXT verification records, show the full domain as host (from Vercel)
+    return record;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -182,7 +203,7 @@ export default function DomainSettings() {
         </div>
       </div>
 
-      {/* Default Workspace URL */}
+      {/* Default Workspace URL — same as before */}
       <Card className="border-border/50 bg-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground">Default Workspace URL</CardTitle>
@@ -203,38 +224,21 @@ export default function DomainSettings() {
                     .{BASE_DOMAIN}
                   </div>
                 </div>
-                <Button
-                  variant="default"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={handleSaveSlug}
-                  disabled={!slugAvailable || updateSlug.isPending || checkingSlug}
-                >
+                <Button variant="default" size="icon" className="h-10 w-10 shrink-0" onClick={handleSaveSlug} disabled={!slugAvailable || updateSlug.isPending || checkingSlug}>
                   {updateSlug.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => setEditingSlug(false)}
-                >
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setEditingSlug(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               {slugInput && slugInput !== domainStatus?.slug && (
                 <div className="flex items-center gap-2 text-xs">
                   {checkingSlug ? (
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Checking availability...
-                    </span>
+                    <span className="text-muted-foreground flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Checking availability...</span>
                   ) : slugAvailable === true ? (
-                    <span className="text-emerald-500 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Available
-                    </span>
+                    <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Available</span>
                   ) : slugAvailable === false ? (
-                    <span className="text-destructive flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> {slugInput.length < 3 ? 'Min 3 characters' : 'Already taken'}
-                    </span>
+                    <span className="text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {slugInput.length < 3 ? 'Min 3 characters' : 'Already taken'}</span>
                   ) : null}
                 </div>
               )}
@@ -242,38 +246,12 @@ export default function DomainSettings() {
           ) : (
             <div className="flex items-center gap-2">
               <div className="flex-1 flex items-center bg-background border border-border/50 rounded-lg overflow-hidden">
-                <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">
-                  {domainStatus?.slug || '...'}
-                </div>
-                <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">
-                  .{BASE_DOMAIN}
-                </div>
+                <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">{domainStatus?.slug || '...'}</div>
+                <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">.{BASE_DOMAIN}</div>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={handleStartEditSlug}
-                title="Edit slug"
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0"
-                onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}
-              >
-                <ExternalLink className="w-4 h-4" />
-              </Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={handleStartEditSlug} title="Edit slug"><Pencil className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><Copy className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><ExternalLink className="w-4 h-4" /></Button>
             </div>
           )}
         </CardContent>
@@ -285,19 +263,8 @@ export default function DomainSettings() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium text-muted-foreground">Custom Domain</CardTitle>
             {domainStatus?.custom_domain && (
-              <Badge
-                variant="outline"
-                className={
-                  domainStatus.domain_verified
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-                    : 'border-amber-500/30 bg-amber-500/10 text-amber-500'
-                }
-              >
-                {domainStatus.domain_verified ? (
-                  <><CheckCircle2 className="w-3 h-3 mr-1" /> Verified</>
-                ) : (
-                  <><AlertCircle className="w-3 h-3 mr-1" /> Pending</>
-                )}
+              <Badge variant="outline" className={domainStatus.domain_verified ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' : 'border-amber-500/30 bg-amber-500/10 text-amber-500'}>
+                {domainStatus.domain_verified ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Verified</> : <><AlertCircle className="w-3 h-3 mr-1" /> Pending</>}
               </Badge>
             )}
           </div>
@@ -306,46 +273,24 @@ export default function DomainSettings() {
           {domainStatus?.custom_domain ? (
             <>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-background border border-border/50 rounded-lg px-4 py-2.5 font-mono text-sm text-foreground">
-                  {domainStatus.custom_domain}
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => verifyDomain.mutate()}
-                  disabled={verifyDomain.isPending}
-                >
+                <div className="flex-1 bg-background border border-border/50 rounded-lg px-4 py-2.5 font-mono text-sm text-foreground">{domainStatus.custom_domain}</div>
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => verifyDomain.mutate()} disabled={verifyDomain.isPending}>
                   <RefreshCw className={`w-4 h-4 ${verifyDomain.isPending ? 'animate-spin' : ''}`} />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={() => openUrl(domainStatus.custom_domain!)}
-                >
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(domainStatus.custom_domain!)}>
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
 
-              <Button
-                variant="destructive"
-                className="w-full gap-2"
-                onClick={() => removeDomain.mutate()}
-                disabled={removeDomain.isPending}
-              >
-                {removeDomain.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-                Remove
+              <Button variant="destructive" className="w-full gap-2" onClick={() => removeDomain.mutate()} disabled={removeDomain.isPending}>
+                {removeDomain.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Remove
               </Button>
 
-              {records.length > 0 && (
+              {displayRecords.length > 0 && (
                 <div className="border border-border/50 rounded-lg overflow-hidden">
                   <div className="px-4 py-2 bg-muted/30 border-b border-border/50">
-                    <span className="text-xs font-medium text-muted-foreground">Configuration Required:</span>
+                    <span className="text-xs font-medium text-muted-foreground">DNS Configuration Required:</span>
+                    <p className="text-xs text-muted-foreground mt-1">Add these records at your domain registrar, then click verify.</p>
                   </div>
                   <table className="w-full text-sm">
                     <thead>
@@ -353,27 +298,29 @@ export default function DomainSettings() {
                         <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Type</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Host</th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Value</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {records.map((record: any, i: number) => (
+                      {displayRecords.map((record: any, i: number) => (
                         <tr key={i} className="border-b border-border/20 last:border-0">
                           <td className="px-4 py-2.5">
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {record.type}
-                            </Badge>
+                            <Badge variant="outline" className="text-xs font-mono">{record.type}</Badge>
                           </td>
                           <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
-                            {record.host}
+                            <button onClick={() => copyToClipboard(record.host)} className="hover:text-primary transition-colors cursor-pointer" title="Click to copy">
+                              {record.host}
+                            </button>
                           </td>
                           <td className="px-4 py-2.5 font-mono text-xs text-foreground">
-                            <button
-                              onClick={() => copyToClipboard(record.value)}
-                              className="hover:text-primary transition-colors cursor-pointer truncate max-w-[200px] block"
-                              title={record.value}
-                            >
+                            <button onClick={() => copyToClipboard(record.value)} className="hover:text-primary transition-colors cursor-pointer truncate max-w-[250px] block text-left" title={record.value}>
                               {record.value}
                             </button>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(record.value)}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
                           </td>
                         </tr>
                       ))}

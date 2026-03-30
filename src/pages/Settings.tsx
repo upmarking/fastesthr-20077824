@@ -177,6 +177,55 @@ export default function Settings() {
 
 // ======== GENERAL TAB ========
 function GeneralTab({ form, setForm, company }: any) {
+  const { profile } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File must be under 2MB');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const filePath = `${profile?.company_id}/logo.${ext}`;
+      
+      // Upload to company-logos bucket
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      // Add cache-bust param
+      const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from('companies')
+        .update({ logo_url: logoUrl })
+        .eq('id', profile?.company_id);
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['my-company'] });
+      queryClient.invalidateQueries({ queryKey: ['company-branding'] });
+      toast.success('Logo updated!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload logo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (<>
     <div className="grid md:grid-cols-2 gap-6 pt-4">
       <div className="space-y-2">
@@ -237,13 +286,24 @@ function GeneralTab({ form, setForm, company }: any) {
     <div className="pt-6 border-t border-border/50">
       <h3 className="text-lg font-semibold mb-4">Company Logo</h3>
       <div className="flex items-center gap-6">
-        <div className="w-24 h-24 rounded-lg bg-background border-2 border-dashed border-primary/40 flex items-center justify-center text-primary/40 hover:text-primary hover:border-primary transition-colors cursor-pointer">
+        <div className="w-24 h-24 rounded-lg bg-background border-2 border-dashed border-primary/40 flex items-center justify-center text-primary/40 hover:text-primary hover:border-primary transition-colors cursor-pointer overflow-hidden">
           {company?.logo_url ? <img src={company.logo_url} alt="Logo" className="w-full h-full object-cover rounded-lg" /> : <Building className="w-8 h-8" />}
         </div>
         <div>
           <p className="text-sm mb-1">Upload a new logo</p>
           <p className="text-xs text-muted-foreground mb-3">Max 2MB. Recommended 256×256px.</p>
-          <Button variant="outline" size="sm" className="text-xs h-8">Choose File</Button>
+          <label>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+              disabled={uploading}
+            />
+            <Button variant="outline" size="sm" className="text-xs h-8" asChild disabled={uploading}>
+              <span>{uploading ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Uploading...</> : 'Choose File'}</span>
+            </Button>
+          </label>
         </div>
       </div>
     </div>
