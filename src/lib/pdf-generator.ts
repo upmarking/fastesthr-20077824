@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-// @ts-ignore
+// @ts-expect-error No type definitions available for html2pdf.js
 import html2pdf from 'html2pdf.js';
 
 interface CompensationStructure {
@@ -51,7 +51,7 @@ function substituteVariables(html: string, vars: Record<string, string>): string
     const regex = new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
     // Escape the value to prevent XSS from user inputs (e.g., candidate name, custom vars)
     const safeValue = escapeHtml(String(value));
-    result = result.replace(regex, safeValue);
+    result = result.replace(regex, () => safeValue);
   }
   
   // Auto-fix for legacy template Javascript that incorrectly parses currency symbols
