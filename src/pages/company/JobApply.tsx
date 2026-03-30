@@ -449,10 +449,8 @@ export default function JobApply() {
     queryFn: async () => {
       const isCustomDomain = hostSlug && hostSlug.includes('.');
       let query = supabase
-        .from('companies')
-        .select('id, name, slug, logo_url, about_company, industry, size, country, website, linkedin_url')
-        .eq('is_active', true)
-        .is('deleted_at', null);
+        .from('public_companies')
+        .select('id, name, slug, logo_url, about_company, industry, size, country, website, linkedin_url, custom_domain');
       if (isCustomDomain) {
         query = query.eq('custom_domain', hostSlug!);
       } else {
