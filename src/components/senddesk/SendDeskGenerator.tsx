@@ -113,15 +113,26 @@ export function SendDeskGenerator() {
     enabled: !!profile?.company_id,
   });
 
+  const searchableMetadata = useMemo(() => {
+    return employees.map(e => ({
+      employee: e,
+      fullNameLower: `${e.first_name} ${e.last_name}`.toLowerCase(),
+      codeLower: (e.employee_code || '').toLowerCase(),
+      emailLower: (e.work_email || '').toLowerCase(),
+    }));
+  }, [employees]);
+
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
     const s = searchTerm.toLowerCase();
-    return employees.filter(e =>
-      `${e.first_name} ${e.last_name}`.toLowerCase().includes(s) ||
-      e.employee_code?.toLowerCase().includes(s) ||
-      e.work_email?.toLowerCase().includes(s)
-    );
-  }, [employees, searchTerm]);
+    return searchableMetadata
+      .filter(m =>
+        m.fullNameLower.includes(s) ||
+        m.codeLower.includes(s) ||
+        m.emailLower.includes(s)
+      )
+      .map(m => m.employee);
+  }, [employees, searchableMetadata, searchTerm]);
 
   const templatesByCategory = useMemo(() => {
     const grouped: Record<string, Template[]> = {};
