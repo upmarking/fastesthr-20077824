@@ -62,6 +62,7 @@ function getResponse(input: string): string {
 export function AIAssistant() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '0',
@@ -76,19 +77,21 @@ export function AIAssistant() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSend = () => {
     if (!input.trim()) return;
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim(), timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setIsTyping(true);
 
     // Simulate thinking delay
     setTimeout(() => {
       const response = getResponse(input);
       const botMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: response, timestamp: new Date() };
       setMessages(prev => [...prev, botMsg]);
+      setIsTyping(false);
     }, 500);
   };
 
@@ -98,6 +101,7 @@ export function AIAssistant() {
         <Button
           size="lg"
           onClick={() => setOpen(true)}
+          aria-label="Open AI Assistant"
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all hover:scale-110 animate-in fade-in slide-in-from-bottom-4"
         >
           <Sparkles className="h-6 w-6" />
@@ -115,7 +119,7 @@ export function AIAssistant() {
             <span>HR AI Assistant</span>
             <Badge className="bg-success/10 text-success border-success/30 text-[10px]">Online</Badge>
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)} aria-label="Close AI Assistant">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -132,16 +136,30 @@ export function AIAssistant() {
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex gap-2">
+                <div className="p-1.5 rounded-full h-7 w-7 flex items-center justify-center flex-shrink-0 bg-primary/10 text-primary">
+                  <Bot className="h-3.5 w-3.5" />
+                </div>
+                <div className="max-w-[80%] rounded-lg px-3 py-3 text-sm bg-muted/50 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="border-t border-border/50 p-3 flex gap-2">
             <Input
               placeholder="Ask about HR policies..."
+              aria-label="Ask a question about HR policies"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               className="text-sm"
+              disabled={isTyping}
             />
-            <Button size="icon" onClick={handleSend} disabled={!input.trim()}>
+            <Button size="icon" onClick={handleSend} disabled={!input.trim() || isTyping} aria-label="Send message">
               <Send className="h-4 w-4" />
             </Button>
           </div>
