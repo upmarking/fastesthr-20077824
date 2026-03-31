@@ -114,6 +114,7 @@ export default function Register() {
                 type="button" variant="ghost" size="icon"
                 className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
@@ -121,7 +122,7 @@ export default function Register() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" type="password" placeholder="Confirm" {...register('confirmPassword')} />
+            <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder="Confirm" {...register('confirmPassword')} />
             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
           </div>
         </div>

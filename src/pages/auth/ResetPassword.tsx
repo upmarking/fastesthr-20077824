@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Check, X } from 'lucide-react';
+import { Loader2, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,7 @@ const passwordRules = [
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: zodResolver(schema) });
   const password = watch('password', '');
 
@@ -51,7 +52,17 @@ export default function ResetPassword() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="password">New Password</Label>
-          <Input id="password" type="password" placeholder="Enter new password" {...register('password')} />
+          <div className="relative">
+            <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter new password" {...register('password')} />
+            <Button
+              type="button" variant="ghost" size="icon"
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
         {password && (
           <div className="flex flex-wrap gap-2">
@@ -67,7 +78,7 @@ export default function ResetPassword() {
         )}
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input id="confirmPassword" type="password" placeholder="Confirm password" {...register('confirmPassword')} />
+          <Input id="confirmPassword" type={showPassword ? 'text' : 'password'} placeholder="Confirm password" {...register('confirmPassword')} />
           {errors.confirmPassword && <p className="text-sm text-destructive">{(errors.confirmPassword as any).message}</p>}
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
