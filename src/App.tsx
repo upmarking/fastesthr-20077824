@@ -41,6 +41,7 @@ import SendDesk from '@/pages/SendDesk';
 import Companies from '@/pages/admin/Companies';
 import Subscriptions from '@/pages/admin/Subscriptions';
 import SystemSettings from '@/pages/admin/SystemSettings';
+import Roles from '@/pages/settings/Roles';
 
 // Sub-pages (lazy loaded for performance)
 const NewEmployee = lazy(() => import('@/pages/employees/NewEmployee'));
@@ -157,6 +158,7 @@ function AppRoutes() {
       <Route path="/holidays" element={withLayout(<HolidayCalendar />)} />
       <Route path="/senddesk" element={withLayout(<SendDesk />)} />
       <Route path="/billing" element={withLayout(<Billing />, 'company_admin')} />
+      <Route path="/roles" element={withLayout(<Roles />, 'company_admin')} />
       <Route path="/settings/*" element={withLayout(<Settings />, 'company_admin')} />
 
       {/* Super Admin routes */}

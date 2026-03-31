@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Clock, CalendarDays, DollarSign, BarChart3,
   Briefcase, GraduationCap, Headset, Megaphone, PieChart, Settings,
   Globe, Building2, CreditCard, Server, ChevronLeft, LogOut, Zap,
-  FileText, UserPlus, Network, UserMinus, CalendarCheck, ChevronRight, Send
+  FileText, UserPlus, Network, UserMinus, CalendarCheck, ChevronRight, Send, Shield
 } from 'lucide-react';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -58,6 +58,7 @@ const managementNav: NavItem[] = [
 
 const accountNav: NavItem[] = [
   { title: 'Billing', url: '/billing', icon: CreditCard, roles: ADMIN_ONLY },
+  { title: 'Roles', url: '/roles', icon: Shield, roles: ADMIN_ONLY },
   { title: 'Settings', url: '/settings', icon: Settings, roles: ADMIN_ONLY },
 ];
 
