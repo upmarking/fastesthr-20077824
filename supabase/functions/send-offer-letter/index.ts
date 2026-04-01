@@ -6,7 +6,7 @@ import * as nodemailer from "npm:nodemailer@6.9.8";
 (globalThis as any).Buffer = Buffer;
 
 const allowedOrigins = [
-  'https://fastesthre.com',
+  'https://fastesthr.com',
   'http://localhost:8080'
 ];
 
