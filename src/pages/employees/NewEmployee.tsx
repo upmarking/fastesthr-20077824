@@ -109,6 +109,32 @@ export default function NewEmployee() {
     enabled: !!profile?.company_id,
   });
 
+  const { data: licenseData, isLoading: isLoadingLicense } = useQuery({
+    queryKey: ['license-status', profile?.company_id],
+    queryFn: async () => {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('license_limit')
+        .eq('id', profile!.company_id!)
+        .single();
+        
+      const { count } = await supabase
+        .from('employees')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile!.company_id!)
+        .eq('status', 'active')
+        .is('deleted_at', null);
+        
+      return {
+        limit: company?.license_limit || 1, // Fallback if no limit specified
+        used: count || 0
+      };
+    },
+    enabled: !!profile?.company_id,
+  });
+
+  const isLicenseFull = licenseData ? licenseData.used >= licenseData.limit : false;
+
   const createMutation = useMutation({
     mutationFn: async (payload: typeof form) => {
       const { data, error } = await supabase
@@ -178,6 +204,28 @@ export default function NewEmployee() {
           <p className="text-muted-foreground mt-1 text-sm">EMPLOYEE_ONBOARDING::FORM_v1</p>
         </div>
       </div>
+
+      {isLicenseFull && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="bg-destructive/20 p-2 rounded-full shrink-0">
+            <UserPlus className="h-5 w-5 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-destructive">License Limit Reached</h3>
+            <p className="text-sm text-destructive/80 mt-1">
+              Your company has reached its license limit ({licenseData?.used}/{licenseData?.limit} seats used). 
+              To add more employees, please upgrade your subscription plan.
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate('/billing')} 
+            variant="default"
+            className="shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Upgrade Plan
+          </Button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Info */}
@@ -271,15 +319,15 @@ export default function NewEmployee() {
           </Button>
           <Button
             type="submit"
-            disabled={createMutation.isPending}
-            className="gap-2 min-w-[160px]"
+            disabled={createMutation.isPending || isLicenseFull || isLoadingLicense}
+            className={`gap-2 min-w-[160px] ${isLicenseFull ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {createMutation.isPending ? (
+            {createMutation.isPending || isLoadingLicense ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Save className="h-4 w-4" />
             )}
-            {createMutation.isPending ? 'SAVING...' : 'SAVE_EMPLOYEE'}
+            {createMutation.isPending ? 'SAVING...' : isLicenseFull ? 'LIMIT_REACHED' : 'SAVE_EMPLOYEE'}
           </Button>
         </div>
       </form>

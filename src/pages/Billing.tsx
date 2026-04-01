@@ -179,10 +179,11 @@ export default function Billing() {
     queryFn: async () => {
       if (!companyId) return 0;
       const { count, error } = await supabase
-        .from('profiles')
+        .from('employees')
         .select('*', { count: 'exact', head: true })
         .eq('company_id', companyId)
-        .eq('is_active', true);
+        .eq('status', 'active')
+        .is('deleted_at', null);
       if (error) throw error;
       return count || 0;
     },
@@ -439,7 +440,7 @@ export default function Billing() {
       {/* ─── Low Balance Warning ────────────────────────────────── */}
       {isLowBalance && walletBalance >= 0 && (
         <div className={`flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10 animate-pulse">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10 animate-pulse">
             <AlertTriangle className="h-5 w-5 text-red-500" />
           </div>
           <div>
@@ -449,6 +450,45 @@ export default function Billing() {
               Add funds to avoid service interruption.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* ─── Trial / License Warnings ────────────────────────────────── */}
+      {company?.plan === 'trial' && planExpired && (
+        <div className={`mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
+              <Clock className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-red-500">Trial Expired</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Your 14-day free trial has expired. To continue adding employees and using premium features, please upgrade to a paid subscription by adding seats.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setAddSeatsOpen(true)} className="shrink-0 bg-red-500 hover:bg-red-600 text-white border-0 shadow-md">
+            Upgrade Subscription
+          </Button>
+        </div>
+      )}
+
+      {usedSeats >= licenseLimit && (!company?.plan || company.plan !== 'trial' || !planExpired) && (
+        <div className={`mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+              <Users className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-amber-500">License Limit Reached</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                You have reached your maximum license limit ({usedSeats}/{licenseLimit} seats). To onboard new employees, you must add more seats to your subscription.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setAddSeatsOpen(true)} className="shrink-0 bg-amber-500 hover:bg-amber-600 text-white border-0 shadow-md">
+            Add More Seats
+          </Button>
         </div>
       )}
 

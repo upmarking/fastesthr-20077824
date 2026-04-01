@@ -114,10 +114,23 @@ export function RecruitmentTeam() {
     onError: () => toast.error('Failed to deactivate user'),
   });
 
+  const { data: usedLicences = 0 } = useQuery({
+    queryKey: ['used-seats', profile?.company_id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('employees')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', profile!.company_id!)
+        .eq('status', 'active')
+        .is('deleted_at', null);
+      return count || 0;
+    },
+    enabled: !!profile?.company_id,
+  });
+
   const activeMembers = teamMembers.filter((m) => m.is_active);
-  const usedLicences = activeMembers.length;
   const totalLicences = company?.license_limit || 5;
-  const licencePercent = Math.min((usedLicences / totalLicences) * 100, 100);
+  const licencePercent = Math.min((usedLicences / Math.max(totalLicences, 1)) * 100, 100);
 
   const managers = teamMembers.filter((m) => m.platform_role === 'hr_manager' && m.is_active);
   const recruiters = teamMembers.filter((m) => m.platform_role === 'recruiter' && m.is_active);
