@@ -1,6 +1,6 @@
+import { Buffer } from "node:buffer";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import * as nodemailer from "npm:nodemailer@6.9.8";
-import { Buffer } from "node:buffer";
 
 // Polyfill Buffer for nodemailer running in Deno
 (globalThis as any).Buffer = Buffer;
@@ -57,6 +57,10 @@ Deno.serve(async (req) => {
 
     if (companyError || !company) {
       throw new Error(`Company not found: ${companyError?.message}`);
+    }
+
+    if (!company.smtp_host || !company.smtp_user || !company.smtp_pass) {
+      throw new Error(`SMTP is not configured for this company. Please set it up in Company Settings.`);
     }
 
     // 2. Fetch candidate & job for email
@@ -176,8 +180,9 @@ Deno.serve(async (req) => {
       // Replace custom variables
       if (offer_data?.custom_variable_values) {
         for (const [key, value] of Object.entries(offer_data.custom_variable_values)) {
-          // Use a case-insensitive regex for custom variables too
-          const customRegex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+          // Escape special regex characters in the key
+          const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const customRegex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'gi');
           result = result.replace(customRegex, value as string);
         }
       }
@@ -230,8 +235,8 @@ Deno.serve(async (req) => {
       html: emailHtml,
       attachments: [
         {
-          filename: `Offer-${candidate.full_name.replace(/\\s+/g, '-')}.pdf`,
-          content: new Uint8Array(pdfBuffer),
+          filename: `Offer-${candidate.full_name.replace(/\s+/g, '-')}.pdf`,
+          content: Buffer.from(pdfBuffer),
           contentType: 'application/pdf'
         }
       ]
@@ -243,9 +248,9 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
-    console.error('Offer Letter Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
+    console.error('Offer Letter Error:', error.message, error.stack);
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
