@@ -189,10 +189,13 @@ Deno.serve(async (req) => {
           records: [],
         };
 
-        // The user needs to set up CNAME and TXT
+        // Compute correct CNAME host: for hr.weskill.org → "hr", for example.com → "@"
+        const domainParts = cleanDomain.split('.');
+        const cnameHost = domainParts.length > 2 ? domainParts.slice(0, domainParts.length - 2).join('.') : '@';
+
         config.records.push({
           type: "CNAME",
-          host: "@",
+          host: cnameHost,
           value: `cname.${BASE_DOMAIN}`,
         });
 
@@ -206,7 +209,7 @@ Deno.serve(async (req) => {
               for (const v of verifyInfo.verification) {
                 config.records.push({
                   type: v.type,
-                  host: v.domain,
+                  host: v.domain || '_vercel',
                   value: v.value,
                 });
               }
