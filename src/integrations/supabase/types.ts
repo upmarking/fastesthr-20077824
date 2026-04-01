@@ -355,6 +355,9 @@ export type Database = {
       }
       candidates: {
         Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to: string | null
           candidate_user_id: string | null
           company_id: string
           cover_letter: string | null
@@ -365,6 +368,7 @@ export type Database = {
           job_id: string
           parsed_data: Json | null
           phone: string | null
+          recruiter_notes: string | null
           rejection_reason: string | null
           resume_url: string | null
           score: number | null
@@ -373,6 +377,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
           candidate_user_id?: string | null
           company_id: string
           cover_letter?: string | null
@@ -383,6 +390,7 @@ export type Database = {
           job_id: string
           parsed_data?: Json | null
           phone?: string | null
+          recruiter_notes?: string | null
           rejection_reason?: string | null
           resume_url?: string | null
           score?: number | null
@@ -391,6 +399,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
           candidate_user_id?: string | null
           company_id?: string
           cover_letter?: string | null
@@ -401,6 +412,7 @@ export type Database = {
           job_id?: string
           parsed_data?: Json | null
           phone?: string | null
+          recruiter_notes?: string | null
           rejection_reason?: string | null
           resume_url?: string | null
           score?: number | null
@@ -409,6 +421,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "candidates_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "candidates_company_id_fkey"
             columns: ["company_id"]
@@ -2141,6 +2167,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_login_at: string | null
+          manager_id: string | null
           phone: string | null
           platform_role: Database["public"]["Enums"]["platform_role"] | null
           updated_at: string
@@ -2153,6 +2180,7 @@ export type Database = {
           id: string
           is_active?: boolean | null
           last_login_at?: string | null
+          manager_id?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["platform_role"] | null
           updated_at?: string
@@ -2165,6 +2193,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
+          manager_id?: string | null
           phone?: string | null
           platform_role?: Database["public"]["Enums"]["platform_role"] | null
           updated_at?: string
@@ -2182,6 +2211,69 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_team_members: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manager_id: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manager_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_team_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_team_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_team_members_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
