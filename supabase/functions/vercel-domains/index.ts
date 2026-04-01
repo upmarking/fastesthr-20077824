@@ -250,6 +250,10 @@ Deno.serve(async (req) => {
         const verified = verifyResult.verified || false;
         const config = company.domain_config || {};
 
+        // Compute correct CNAME host
+        const domainParts = company.custom_domain.split('.');
+        const cnameHost = domainParts.length > 2 ? domainParts.slice(0, domainParts.length - 2).join('.') : '@';
+
         // Update verification records
         const updatedConfig: any = {
           ...config,
@@ -259,7 +263,7 @@ Deno.serve(async (req) => {
 
         updatedConfig.records.push({
           type: "CNAME",
-          host: "@",
+          host: cnameHost,
           value: `cname.${BASE_DOMAIN}`,
         });
 
@@ -267,7 +271,7 @@ Deno.serve(async (req) => {
           for (const v of verifyResult.verification) {
             updatedConfig.records.push({
               type: v.type,
-              host: v.domain,
+              host: v.domain || '_vercel',
               value: v.value,
             });
           }
