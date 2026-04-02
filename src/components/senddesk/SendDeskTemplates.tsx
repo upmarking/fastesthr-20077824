@@ -664,6 +664,7 @@ function TemplateEditorDialog({ isOpen, onClose, template }: { isOpen: boolean, 
                   </div>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 mt-5"
                     onClick={() => setCustomVariables(prev => prev.filter((_, i) => i !== idx))}
+                    aria-label="Delete custom variable"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
