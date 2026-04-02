@@ -6,8 +6,9 @@ import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Briefcase, Loader2, Plus, Send, Save, X, GripVertical, Settings, Mail, Bell } from 'lucide-react';
+import { ArrowLeft, Briefcase, Loader2, Plus, Send, Save, X, GripVertical, Settings, Mail, Bell, Sparkles, Bot } from 'lucide-react';
 import { toast } from 'sonner';
+import { AIWriterModal } from '@/components/recruitment/AIWriterModal';
 import { 
   Dialog,
   DialogContent,
@@ -342,12 +343,17 @@ export default function NewJob() {
     min_salary: '',
     max_salary: '',
     openings: '1',
+    ai_interview_enabled: false,
   });
 
   const [pipelineStages, setPipelineStages] = useState<string[]>(['applied', 'screening', 'interview', 'offer', 'hired']);
   const [stageAutomations, setStageAutomations] = useState<Record<string, any>>({});
   const [newStageName, setNewStageName] = useState('');
   const [editingAutomation, setEditingAutomation] = useState<string | null>(null);
+  const [aiWriterModal, setAiWriterModal] = useState<{ open: boolean; type: 'job_description' | 'requirements' | 'about_company' }>({
+    open: false,
+    type: 'job_description',
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -387,6 +393,7 @@ export default function NewJob() {
         max_salary: jobData.max_salary?.toString() || '',
         openings: jobData.openings?.toString() || '1',
         job_slug: jobData.job_slug || '',
+        ai_interview_enabled: (jobData as any).ai_interview_enabled || false,
       });
       if ((jobData as any).pipeline_stages) {
         setPipelineStages((jobData as any).pipeline_stages);
@@ -460,6 +467,7 @@ export default function NewJob() {
         openings: parseInt(form.openings) || 1,
         pipeline_stages: pipelineStages,
         stage_automations: stageAutomations,
+        ai_interview_enabled: form.ai_interview_enabled,
       };
 
       if (isEditing) {
@@ -727,6 +735,49 @@ export default function NewJob() {
             </CardTitle>
             <CardDescription className="text-xs font-medium">Define the custom stages for this role's pipeline</CardDescription>
           </CardHeader>
+          {/* AI Interview Toggle */}
+          <div className="px-6 pt-4 pb-0">
+            <div className={`flex items-start gap-4 p-4 rounded-xl border transition-all duration-300 ${
+              form.ai_interview_enabled
+                ? 'bg-primary/5 border-primary/30'
+                : 'bg-muted/20 border-border/40'
+            }`}>
+              <div className={`mt-0.5 flex-shrink-0 p-2 rounded-xl ${
+                form.ai_interview_enabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+              }`}>
+                <Bot className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-sm text-foreground">Enable AI Voice Interview</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      When on, candidates will complete an autonomous AI screening call (powered by Gemini Live) before submitting their application.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={form.ai_interview_enabled}
+                    onClick={() => setForm(prev => ({ ...prev, ai_interview_enabled: !prev.ai_interview_enabled }))}
+                    className={`relative flex-shrink-0 h-6 w-11 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                      form.ai_interview_enabled ? 'bg-primary' : 'bg-muted-foreground/30'
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 ${
+                      form.ai_interview_enabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+                {form.ai_interview_enabled && (
+                  <div className="mt-2 text-[11px] text-primary/70 flex items-center gap-1.5">
+                    <Sparkles className="h-3 w-3" />
+                    AI will ask 4-5 questions based on your job requirements and score candidates automatically.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           <CardContent className="pt-6 space-y-4">
             <div className="flex gap-2">
               <Input
@@ -799,7 +850,19 @@ export default function NewJob() {
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Job Description</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Job Description</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2.5 gap-1.5 text-[11px] text-primary hover:bg-primary/10 hover:text-primary border border-primary/20"
+                  onClick={() => setAiWriterModal({ open: true, type: 'job_description' })}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Take Fastu AI Assistance
+                </Button>
+              </div>
               <textarea
                 name="description"
                 value={form.description}
@@ -810,7 +873,19 @@ export default function NewJob() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Requirements</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Requirements</label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2.5 gap-1.5 text-[11px] text-primary hover:bg-primary/10 hover:text-primary border border-primary/20"
+                  onClick={() => setAiWriterModal({ open: true, type: 'requirements' })}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Take Fastu AI Assistance
+                </Button>
+              </div>
               <textarea
                 name="requirements"
                 value={form.requirements}
@@ -822,6 +897,26 @@ export default function NewJob() {
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Writer Modal */}
+        <AIWriterModal
+          open={aiWriterModal.open}
+          onOpenChange={(o) => setAiWriterModal(prev => ({ ...prev, open: o }))}
+          type={aiWriterModal.type}
+          context={{
+            title: form.title,
+            department: departments.find((d: any) => d.id === form.department_id)?.name,
+            location: form.location,
+            employmentType: form.employment_type,
+            workType: form.work_type,
+            minSalary: form.min_salary,
+            maxSalary: form.max_salary,
+          }}
+          onAccept={(content) => {
+            setForm(prev => ({ ...prev, [aiWriterModal.type === 'job_description' ? 'description' : 'requirements']: content }));
+            toast.success('AI content applied!');
+          }}
+        />
 
         {/* Actions */}
         <div className="flex items-center justify-between">

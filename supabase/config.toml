@@ -8,3 +8,10 @@ verify_jwt = false
 
 [functions.vercel-domains]
 verify_jwt = false
+
+[functions.send-ai-interview-invite]
+verify_jwt = false
+
+[functions.ai-interviewer]
+verify_jwt = false
+

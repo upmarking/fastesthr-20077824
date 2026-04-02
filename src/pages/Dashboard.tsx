@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Users, Clock, CalendarDays, Briefcase, DollarSign, UserPlus,
-  Megaphone, TrendingUp, ArrowRight, BarChart3, PieChart, Cake, PartyPopper, TrendingDown, MessageSquare
+  Megaphone, TrendingUp, ArrowRight, BarChart3, PieChart, Cake, PartyPopper, TrendingDown, MessageSquare, Bot, Sparkles, BrainCircuit
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,6 +175,29 @@ function CompanyAdminDashboard() {
     enabled: !!profile?.company_id,
   });
 
+  const { data: aiRecruitmentStats, isLoading: loadingAI } = useQuery({
+    queryKey: ['ai-recruitment-stats', profile?.company_id],
+    queryFn: async () => {
+      const { data: candidates } = await supabase
+        .from('candidates')
+        .select('id, full_name, ai_interview_result')
+        .eq('company_id', profile!.company_id!)
+        .not('ai_interview_result', 'is', null);
+
+      const interviewedCount = candidates?.length || 0;
+      const avgScore = interviewedCount > 0 
+        ? (candidates!.reduce((acc, curr) => acc + (curr.ai_interview_result?.ai_score || 0), 0) / interviewedCount).toFixed(1)
+        : '0.0';
+      
+      const topCandidates = [...(candidates || [])]
+        .sort((a, b) => (b.ai_interview_result?.ai_score || 0) - (a.ai_interview_result?.ai_score || 0))
+        .slice(0, 3);
+
+      return { interviewedCount, avgScore, topCandidates };
+    },
+    enabled: !!profile?.company_id,
+  });
+
   const attritionRate = employeeCount > 0 ? (attritionCount / (employeeCount + attritionCount) * 100).toFixed(1) : '0.0';
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -250,6 +273,55 @@ function CompanyAdminDashboard() {
             </Button>
             <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/announcements')}>
               <Megaphone className="h-4 w-4" /> Send Announcement
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* AI Recruitment Insights */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="border-b border-primary/10 pb-4">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <Sparkles className="h-4 w-4" /> AI Recruitment Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-background border border-border/50">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">AI Interviews</p>
+                <p className="text-xl font-bold">{aiRecruitmentStats?.interviewedCount || 0}</p>
+              </div>
+              <div className="p-3 rounded-xl bg-background border border-border/50">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg. AI Score</p>
+                <p className="text-xl font-bold text-primary">{aiRecruitmentStats?.avgScore || '0.0'}<span className="text-xs text-muted-foreground">/10</span></p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold flex items-center gap-1.5">
+                <Bot className="h-3 w-3 text-primary" /> Top AI-Ranked
+              </p>
+              {loadingAI ? (
+                <Skeleton className="h-20 w-full" />
+              ) : aiRecruitmentStats?.topCandidates.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground italic">No AI data available yet.</p>
+              ) : (
+                aiRecruitmentStats?.topCandidates.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50 border border-border/50">
+                    <span className="text-xs font-medium truncate max-w-[100px]">{c.full_name}</span>
+                    <Badge variant="secondary" className="h-5 text-[10px] bg-primary/10 text-primary border-none">
+                      {c.ai_interview_result?.ai_score}/10
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Button 
+              variant="link" 
+              className="w-full text-xs text-primary h-auto p-0" 
+              onClick={() => navigate('/recruitment')}
+            >
+              View Detailed AI Reports
             </Button>
           </CardContent>
         </Card>

@@ -19,6 +19,9 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
 import { AssignCandidateDialog } from '@/components/recruitment/AssignCandidateDialog';
+import { BulkAssignLeadsDialog } from '@/components/recruitment/BulkAssignLeadsDialog';
+import { BulkDeleteLeadsDialog } from '@/components/recruitment/BulkDeleteLeadsDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 
 const STAGE_COLORS: Record<string, string> = {
@@ -47,6 +50,9 @@ export function RecruitmentLeadsBoard() {
     currentAssignee: string | null;
     jobId: string;
   }>({ open: false, candidateId: '', candidateName: '', currentAssignee: null, jobId: '' });
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const isAdmin = ['company_admin', 'super_admin'].includes(profile?.platform_role || '');
   const isManager = profile?.platform_role === 'hr_manager';
@@ -148,6 +154,20 @@ export function RecruitmentLeadsBoard() {
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
+  const toggleSelectAll = () => {
+    if (selectedLeadIds.length === filtered.length) {
+      setSelectedLeadIds([]);
+    } else {
+      setSelectedLeadIds(filtered.map((l: any) => l.id));
+    }
+  };
+
+  const toggleSelectLead = (id: string) => {
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
   const ALL_STAGES = ['applied', 'screening', 'interview', 'assessment', 'offer', 'hired', 'rejected'];
 
   return (
@@ -226,10 +246,50 @@ export function RecruitmentLeadsBoard() {
         </div>
       </div>
 
-      {/* Count */}
-      <p className="text-sm text-muted-foreground">
-        <span className="font-medium text-foreground">{filtered.length}</span> lead{filtered.length !== 1 ? 's' : ''} found
-      </p>
+      {/* Count and Bulk Actions */}
+      <div className="flex items-center justify-between h-8">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{filtered.length}</span> lead{filtered.length !== 1 ? 's' : ''} found
+        </p>
+
+        {selectedLeadIds.length > 0 && (
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full mr-2">
+              {selectedLeadIds.length} selected
+            </span>
+            {(isAdmin || isManager) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => setBulkAssignOpen(true)}
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                Bulk Assign
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Delete
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setSelectedLeadIds([])}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
@@ -245,8 +305,17 @@ export function RecruitmentLeadsBoard() {
         /* LIST VIEW */
         <div className="space-y-2">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground font-medium">
-            <div className="col-span-3">Candidate</div>
+          <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground font-medium items-center">
+            <div className="col-span-3 flex items-center gap-3">
+              {(isAdmin || isManager) && (
+                <Checkbox
+                  checked={selectedLeadIds.length === filtered.length && filtered.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all"
+                />
+              )}
+              <span>Candidate</span>
+            </div>
             <div className="col-span-2">Job</div>
             <div className="col-span-2">Stage</div>
             <div className="col-span-2">Assigned To</div>
@@ -260,6 +329,14 @@ export function RecruitmentLeadsBoard() {
                 <div className="grid grid-cols-12 gap-4 items-center">
                   {/* Candidate */}
                   <div className="col-span-3 flex items-center gap-3 min-w-0">
+                    {(isAdmin || isManager) && (
+                      <Checkbox
+                        checked={selectedLeadIds.includes(lead.id)}
+                        onCheckedChange={() => toggleSelectLead(lead.id)}
+                        aria-label={`Select ${lead.full_name}`}
+                        className="flex-shrink-0"
+                      />
+                    )}
                     <Avatar className="h-8 w-8 flex-shrink-0">
                       <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
                         {getInitials(lead.full_name)}
@@ -360,15 +437,23 @@ export function RecruitmentLeadsBoard() {
                 </div>
                 <div className="min-h-[200px] space-y-2 p-2 rounded-lg bg-muted/20 border border-dashed border-border/40">
                   {stageLeads.map((lead: any) => (
-                    <Card key={lead.id} className="bg-background border-border/40 shadow-sm">
+                    <Card key={lead.id} className={`bg-background border-border/40 shadow-sm transition-all ${selectedLeadIds.includes(lead.id) ? 'ring-1 ring-primary' : ''}`}>
                       <CardContent className="p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-7 w-7">
+                        <div className="flex items-start gap-2">
+                          {(isAdmin || isManager) && (
+                            <Checkbox
+                              checked={selectedLeadIds.includes(lead.id)}
+                              onCheckedChange={() => toggleSelectLead(lead.id)}
+                              aria-label={`Select ${lead.full_name}`}
+                              className="mt-1"
+                            />
+                          )}
+                          <Avatar className="h-7 w-7 flex-shrink-0">
                             <AvatarFallback className="bg-primary/5 text-primary text-[10px]">
                               {getInitials(lead.full_name)}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{lead.full_name}</p>
                             <p className="text-[10px] text-muted-foreground truncate">{lead.jobs?.title}</p>
                           </div>
@@ -427,6 +512,29 @@ export function RecruitmentLeadsBoard() {
           candidateName={assignDialog.candidateName}
           currentAssignee={assignDialog.currentAssignee}
           jobId={assignDialog.jobId}
+        />
+      )}
+
+      {/* Bulk Assign Dialog */}
+      {bulkAssignOpen && (
+        <BulkAssignLeadsDialog
+          open={bulkAssignOpen}
+          onOpenChange={setBulkAssignOpen}
+          leadIds={selectedLeadIds}
+          leadNames={filtered
+            .filter((l: any) => selectedLeadIds.includes(l.id))
+            .map((l: any) => l.full_name)}
+          onSuccess={() => setSelectedLeadIds([])}
+        />
+      )}
+
+      {/* Bulk Delete Dialog */}
+      {bulkDeleteOpen && (
+        <BulkDeleteLeadsDialog
+          open={bulkDeleteOpen}
+          onOpenChange={setBulkDeleteOpen}
+          leadIds={selectedLeadIds}
+          onSuccess={() => setSelectedLeadIds([])}
         />
       )}
     </div>

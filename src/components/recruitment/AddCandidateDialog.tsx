@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, ChevronDown, UserPlus, FileUp, Download, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -17,18 +17,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
+import { BulkUploadDialog } from './BulkUploadDialog';
+import { generateSampleCSV } from '@/lib/csv-parser';
 
 interface AddCandidateDialogProps {
   jobId: string;
 }
 
 export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isIndividualOpen, setIsIndividualOpen] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -65,7 +74,7 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
       queryClient.invalidateQueries({ queryKey: ['candidates', jobId] });
       queryClient.invalidateQueries({ queryKey: ['leads-board'] });
       toast.success('Applicant added successfully');
-      setIsOpen(false);
+      setIsIndividualOpen(false);
       setFormData({ fullName: '', email: '', phone: '', source: 'direct', score: '' });
     },
     onError: (error) => {
@@ -74,9 +83,9 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
     },
   });
 
-  const handleClose = () => {
+  const handleCloseIndividual = () => {
     setFormData({ fullName: '', email: '', phone: '', source: 'direct', score: '' });
-    setIsOpen(false);
+    setIsIndividualOpen(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -88,12 +97,79 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
     mutation.mutate();
   };
 
+  const handleDownloadSample = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const csvContent = generateSampleCSV();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'sample_applicants.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Sample CSV downloaded');
+  };
+
   return (
     <>
-      <Button variant="outline" className="gap-2" onClick={() => setIsOpen(true)}>
-        <Users className="h-4 w-4" /> Add Applicant
-      </Button>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="icon"
+            className="h-8 w-8 relative bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group transition-all rounded-lg shadow-sm hover:shadow-md animate-in fade-in zoom-in duration-300"
+            title="Add Applicant"
+          >
+            <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
+            <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
+              <Plus className="h-2 w-2 font-black" />
+            </div>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className="w-[200px] p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-2xl rounded-xl animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <DropdownMenuItem 
+            onClick={() => setIsIndividualOpen(true)} 
+            className="gap-3 cursor-pointer py-2.5 rounded-lg focus:bg-primary/10 data-[highlighted]:bg-primary/10 transition-colors"
+          >
+            <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <UserPlus className="h-4 w-4 text-blue-500" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">Individual</span>
+              <span className="text-[10px] text-muted-foreground">Add manually</span>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => setIsBulkOpen(true)} 
+            className="gap-3 cursor-pointer py-2.5 rounded-lg focus:bg-primary/10 data-[highlighted]:bg-primary/10 transition-colors group/bulk"
+          >
+            <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <FileUp className="h-4 w-4 text-emerald-500" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">Bulk Upload</span>
+              <span className="text-[10px] text-muted-foreground">Upload CSV</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-7 w-7 rounded-full opacity-0 group-hover/bulk:opacity-100 hover:bg-emerald-500/20 hover:text-emerald-500 transition-all"
+              onClick={handleDownloadSample}
+              title="Download sample CSV"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Individual Dialog */}
+      <Dialog open={isIndividualOpen} onOpenChange={handleCloseIndividual}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add New Applicant</DialogTitle>
@@ -170,7 +246,7 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
               />
             </div>
             <div className="flex justify-end pt-4 space-x-2">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={mutation.isPending}>
+              <Button type="button" variant="outline" onClick={handleCloseIndividual} disabled={mutation.isPending}>
                 Cancel
               </Button>
               <Button type="submit" disabled={mutation.isPending}>
@@ -181,6 +257,13 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog 
+        jobId={jobId} 
+        isOpen={isBulkOpen} 
+        onOpenChange={setIsBulkOpen} 
+      />
     </>
   );
 }

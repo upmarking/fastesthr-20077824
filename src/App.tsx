@@ -50,6 +50,7 @@ const ApplyLeave = lazy(() => import('@/pages/leaves/ApplyLeave'));
 const NewJob = lazy(() => import('@/pages/recruitment/NewJob'));
 const CompanyPage = lazy(() => import('@/pages/company/CompanyPage'));
 const JobApply = lazy(() => import('@/pages/company/JobApply'));
+const AIInterview = lazy(() => import('@/pages/company/AIInterview'));
 const CandidateLogin = lazy(() => import('@/pages/candidate/CandidateLogin'));
 const CandidatePortal = lazy(() => import('@/pages/candidate/CandidatePortal'));
 
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Suspense fallback={<LazyFallback />}><CompanyPage /></Suspense>} />
         <Route path="/jobs/:jobSlug" element={<Suspense fallback={<LazyFallback />}><JobApply /></Suspense>} />
+        <Route path="/jobs/:jobSlug/interview/:candidateId" element={<Suspense fallback={<LazyFallback />}><AIInterview /></Suspense>} />
         <Route path="/candidate/login" element={<Suspense fallback={<LazyFallback />}><CandidateLogin /></Suspense>} />
         <Route path="/candidate/portal" element={<Suspense fallback={<LazyFallback />}><CandidatePortal /></Suspense>} />
         <Route path="*" element={<Suspense fallback={<LazyFallback />}><CompanyPage /></Suspense>} />
@@ -125,10 +127,13 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/offer/:token" element={<OfferView />} />
+      <Route path="/ai-interview/:hash" element={<Suspense fallback={<LazyFallback />}><AIInterview /></Suspense>} />
+
 
       {/* Company Career Pages */}
       <Route path="/company/:companySlug" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CompanyPage /></Suspense>} />
       <Route path="/company/:companySlug/jobs/:jobSlug" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><JobApply /></Suspense>} />
+      <Route path="/company/:companySlug/jobs/:jobSlug/interview/:candidateId" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><AIInterview /></Suspense>} />
 
       {/* Candidate Portal */}
       <Route path="/candidate/login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CandidateLogin /></Suspense>} />

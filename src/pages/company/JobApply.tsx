@@ -493,7 +493,7 @@ export default function JobApply() {
     if (!job || !company) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('candidates').insert({
+      const { data, error } = await supabase.from('candidates').insert({
         company_id: company.id,
         job_id: job.id,
         full_name: form.full_name.trim(),
@@ -503,9 +503,14 @@ export default function JobApply() {
         cover_letter: form.cover_letter.trim() || null,
         source: 'careers_page',
         stage: 'applied',
-      });
+      }).select('id').single();
       if (error) throw error;
-      setStep(5); // success
+
+      if ((job as any).ai_interview_enabled) {
+        navigate(`/company/${companySlug}/jobs/${jobSlug}/interview/${data.id}`);
+      } else {
+        setStep(5); // success
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Failed to submit application');
     } finally {

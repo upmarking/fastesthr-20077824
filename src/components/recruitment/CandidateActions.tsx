@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, ArrowRight, XCircle, Trash2, Loader2, Send, Star } from 'lucide-react';
+import { MoreHorizontal, ArrowRight, XCircle, Trash2, Loader2, Send, Star, Sparkles, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { OfferDetailsDialog } from './OfferDetailsDialog';
 import { generateAndUploadOfferPDF, replaceHtmlVariables } from '@/lib/pdf-generator';
 import { EditScoreDialog } from './EditScoreDialog';
+import { SendAIInterviewDialog } from './SendAIInterviewDialog';
+
 
 import {
   DropdownMenu,
@@ -47,6 +49,8 @@ export function CandidateActions({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [isScoreDialogOpen, setIsScoreDialogOpen] = useState(false);
+  const [isAIInterviewDialogOpen, setIsAIInterviewDialogOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [candidate, setCandidate] = useState<{ full_name: string } | null>(null);
   const [pendingStage, setPendingStage] = useState<string | null>(null);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
@@ -342,6 +346,29 @@ export function CandidateActions({
 
   const isNextDisabled = currentStage === 'hired' || currentStage === 'rejected' || updateStageMutation.isPending;
 
+  const handleAnalyzeResume = async () => {
+    setIsAnalyzing(true);
+    toast.info('🔍 AI is analyzing the resume…');
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-resume-ranker', {
+        body: { candidateId, jobId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const result = data?.results?.[0];
+      if (result) {
+        toast.success(`✦ AI Analysis complete — Score: ${result.score}/10`);
+      } else {
+        toast.success('AI Analysis complete!');
+      }
+      queryClient.invalidateQueries({ queryKey: ['candidates', jobId] });
+    } catch (err: any) {
+      toast.error(err?.message || 'AI analysis failed');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -361,6 +388,18 @@ export function CandidateActions({
               Resend Offer Letter
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onClick={handleAnalyzeResume}
+            disabled={isAnalyzing}
+            className="text-primary focus:text-primary"
+          >
+            {isAnalyzing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            {isAnalyzing ? 'Analyzing…' : 'Analyze with AI'}
+          </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => updateStageMutation.mutate('rejected' as any)}
             disabled={currentStage === 'rejected' || updateStageMutation.isPending}
@@ -368,6 +407,10 @@ export function CandidateActions({
           >
             <XCircle className="mr-2 h-4 w-4" />
             Reject
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsAIInterviewDialogOpen(true)} className="text-primary focus:text-primary">
+            <Bot className="mr-2 h-4 w-4" />
+            Send AI Interview Invite
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setIsScoreDialogOpen(true)}>
             <Star className="mr-2 h-4 w-4" />
@@ -427,6 +470,14 @@ export function CandidateActions({
         candidateName={candidateName}
         currentScore={score}
         jobId={jobId}
+      />
+      <SendAIInterviewDialog
+        isOpen={isAIInterviewDialogOpen}
+        onOpenChange={setIsAIInterviewDialogOpen}
+        candidateId={candidateId}
+        candidateName={candidateName}
+        jobId={jobId}
+        stageName={currentStage}
       />
     </>
   );
