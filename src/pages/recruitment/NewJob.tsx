@@ -584,6 +584,7 @@ export default function NewJob() {
           size="icon"
           onClick={() => navigate('/recruitment')}
           className="border border-border/50 hover:border-primary hover:bg-primary/10"
+          aria-label="Go back to recruitment"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
