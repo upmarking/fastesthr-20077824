@@ -907,6 +907,7 @@ export default function Billing() {
                     type="button"
                     variant="outline"
                     size="icon"
+                    title="Decrease seats"
                     onClick={() => setNewSeats(Math.max(1, newSeats - 1))}
                     className="h-10 w-10"
                   >
@@ -923,6 +924,7 @@ export default function Billing() {
                     type="button"
                     variant="outline"
                     size="icon"
+                    title="Increase seats"
                     onClick={() => setNewSeats(newSeats + 1)}
                     className="h-10 w-10"
                   >
