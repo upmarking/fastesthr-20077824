@@ -225,6 +225,7 @@ export function RoleUsers({ roleId, companyId }: RoleUsersProps) {
                   <Button 
                     variant="ghost" 
                     size="icon" 
+                    title="Remove user"
                     className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={() => {
                       if (confirm(`Remove ${user.full_name} from this role?`)) {

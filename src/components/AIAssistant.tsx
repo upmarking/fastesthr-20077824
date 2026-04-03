@@ -115,7 +115,7 @@ export function AIAssistant() {
             <span>HR AI Assistant</span>
             <Badge className="bg-success/10 text-success border-success/30 text-[10px]">Online</Badge>
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+          <Button variant="ghost" size="icon" title="Close AI assistant" className="h-7 w-7" onClick={() => setOpen(false)}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -141,7 +141,7 @@ export function AIAssistant() {
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               className="text-sm"
             />
-            <Button size="icon" onClick={handleSend} disabled={!input.trim()}>
+            <Button size="icon" title="Send message" onClick={handleSend} disabled={!input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
