@@ -12,7 +12,7 @@ import { UserMinus, ClipboardCheck, DollarSign, MessageSquare, Package, Plus, Al
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
 const assetChecklist = [
@@ -203,6 +203,20 @@ export default function ExitManagement() {
   const getEmployeeName = (emp: any) => emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown';
   const getDepartmentName = (emp: any) => emp?.departments?.name || 'Unknown Department';
 
+  // ⚡ Bolt: Memoize exit statistics to prevent recalculating on every render
+  const exitStats = useMemo(() => {
+    const safeExits = exits || [];
+    let active = 0;
+    let completed = 0;
+    let pendingSettlement = 0;
+    safeExits.forEach(e => {
+      if (e.status !== 'completed') active++;
+      if (e.status === 'completed') completed++;
+      if (!e.settlement_done) pendingSettlement++;
+    });
+    return { active, completed, pendingSettlement };
+  }, [exits]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -270,7 +284,7 @@ export default function ExitManagement() {
             <UserMinus className="w-8 h-8 text-warning" />
             <div>
               <p className="text-sm text-muted-foreground">Active Exits</p>
-              <p className="text-3xl font-bold text-warning">{exits.filter(e => e.status !== 'completed').length}</p>
+              <p className="text-3xl font-bold text-warning">{exitStats.active}</p>
             </div>
           </CardContent>
         </Card>
@@ -279,7 +293,7 @@ export default function ExitManagement() {
             <ClipboardCheck className="w-8 h-8 text-success" />
             <div>
               <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-3xl font-bold text-success">{exits.filter(e => e.status === 'completed').length}</p>
+              <p className="text-3xl font-bold text-success">{exitStats.completed}</p>
             </div>
           </CardContent>
         </Card>
@@ -288,7 +302,7 @@ export default function ExitManagement() {
             <AlertTriangle className="w-8 h-8 text-destructive" />
             <div>
               <p className="text-sm text-muted-foreground">Pending Settlements</p>
-              <p className="text-3xl font-bold text-destructive">{exits.filter(e => !e.settlement_done).length}</p>
+              <p className="text-3xl font-bold text-destructive">{exitStats.pendingSettlement}</p>
             </div>
           </CardContent>
         </Card>

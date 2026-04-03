@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Download, Trash2, Search, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,11 +89,27 @@ export default function Documents() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = documents.filter(doc => {
-    const matchSearch = doc.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeTab === 'all' || doc.category === activeTab;
-    return matchSearch && matchCategory;
-  });
+  // ⚡ Bolt: Use metadata wrapper pattern for list filtering optimization
+  // Pre-calculate the lowercased document name for efficient searching without mutating original objects.
+  const searchableDocs = useMemo(() => {
+    const safeDocs = documents || [];
+    return safeDocs.map(doc => ({
+      item: doc,
+      searchStr: doc.name.toLowerCase(),
+    }));
+  }, [documents]);
+
+  const filteredDocs = useMemo(() => {
+    const safeSearchableDocs = searchableDocs || [];
+    const s = search.toLowerCase();
+    return safeSearchableDocs
+      .filter(wrapped => {
+        const matchSearch = wrapped.searchStr.includes(s);
+        const matchCategory = activeTab === 'all' || wrapped.item.category === activeTab;
+        return matchSearch && matchCategory;
+      })
+      .map(wrapped => wrapped.item);
+  }, [searchableDocs, search, activeTab]);
 
   const getExpiryStatus = (expiresAt?: string) => {
     if (!expiresAt) return null;
@@ -105,13 +121,16 @@ export default function Documents() {
     return { label: `Expires: ${expiresAt}`, class: 'border-muted text-muted-foreground' };
   };
 
-  const now = new Date();
-  const expiringCount = documents.filter(d => {
-    if (!d.expiresAt) return false;
-    const exp = new Date(d.expiresAt);
-    const daysLeft = differenceInDays(exp, now);
-    return daysLeft <= 30;
-  }).length;
+  const expiringCount = useMemo(() => {
+    const safeDocs = documents || [];
+    const now = new Date();
+    return safeDocs.filter(d => {
+      if (!d.expiresAt) return false;
+      const exp = new Date(d.expiresAt);
+      const daysLeft = differenceInDays(exp, now);
+      return daysLeft <= 30;
+    }).length;
+  }, [documents]);
 
   const handleCreate = async () => {
     if (!form.name.trim()) { toast.error('Document name is required'); return; }
