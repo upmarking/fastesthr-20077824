@@ -163,19 +163,19 @@ Deno.serve(async (req) => {
     const replaceVars = (text: string) => {
       let result = text
         // Unified variants (Case-insensitive)
-        .replace(/\{\{Name\}\}/gi, candidate.full_name)
-        .replace(/\{\{Designation\}\}/gi, job.title)
-        .replace(/\{\{Offer Number\}\}/gi, offer_number || '')
-        .replace(/\{\{Joined Date\}\}/gi, formattedJoiningDate || '')
-        .replace(/\{\{Payout\}\}/gi, formattedPayout || '')
-        .replace(/\{\{Offer Link\}\}/gi, publicUrl)
-        .replace(/\{\{Today\}\}/gi, formattedDate)
+        .replace(/\{\{Name\}\}/gi, () => candidate.full_name)
+        .replace(/\{\{Designation\}\}/gi, () => job.title)
+        .replace(/\{\{Offer Number\}\}/gi, () => offer_number || '')
+        .replace(/\{\{Joined Date\}\}/gi, () => formattedJoiningDate || '')
+        .replace(/\{\{Payout\}\}/gi, () => formattedPayout || '')
+        .replace(/\{\{Offer Link\}\}/gi, () => publicUrl)
+        .replace(/\{\{Today\}\}/gi, () => formattedDate)
         // Legacy variants
-        .replace(/\{\{candidate_name\}\}/gi, candidate.full_name)
-        .replace(/\{\{job_title\}\}/gi, job.title)
-        .replace(/\{\{offer_number\}\}/gi, offer_number || '')
-        .replace(/\{\{offer_link\}\}/gi, publicUrl)
-        .replace(/\{\{first_name\}\}/gi, candidate.full_name.split(' ')[0]);
+        .replace(/\{\{candidate_name\}\}/gi, () => candidate.full_name)
+        .replace(/\{\{job_title\}\}/gi, () => job.title)
+        .replace(/\{\{offer_number\}\}/gi, () => offer_number || '')
+        .replace(/\{\{offer_link\}\}/gi, () => publicUrl)
+        .replace(/\{\{first_name\}\}/gi, () => candidate.full_name.split(' ')[0]);
 
       // Replace custom variables
       if (offer_data?.custom_variable_values) {
@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
           // Escape special regex characters in the key
           const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const customRegex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'gi');
-          result = result.replace(customRegex, value as string);
+          result = result.replace(customRegex, () => value as string);
         }
       }
       return result;
@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
     });
   } catch (error: any) {
     console.error('Offer Letter Error:', error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
