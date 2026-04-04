@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Download, Trash2, Search, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,11 +89,25 @@ export default function Documents() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = documents.filter(doc => {
-    const matchSearch = doc.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeTab === 'all' || doc.category === activeTab;
-    return matchSearch && matchCategory;
-  });
+  // ⚡ Bolt: Using metadata wrapper pattern to optimize list filtering
+  // This prevents redundant string allocations and toLowerCase() calls during filtering
+  // while preserving original object references for stable re-renders.
+  const wrappedDocs = useMemo(() => {
+    const safeArray = documents || [];
+    return safeArray.map(doc => ({
+      item: doc,
+      searchStr: doc.name.toLowerCase(),
+    }));
+  }, [documents]);
+
+  const filteredDocs = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    return wrappedDocs.filter(w => {
+      const matchSearch = w.searchStr.includes(searchLower);
+      const matchCategory = activeTab === 'all' || w.item.category === activeTab;
+      return matchSearch && matchCategory;
+    }).map(w => w.item);
+  }, [wrappedDocs, search, activeTab]);
 
   const getExpiryStatus = (expiresAt?: string) => {
     if (!expiresAt) return null;

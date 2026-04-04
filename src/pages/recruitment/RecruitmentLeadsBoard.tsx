@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
@@ -141,15 +141,22 @@ export function RecruitmentLeadsBoard() {
     enabled: !!profile?.company_id,
   });
 
-  const filtered = leads.filter((l: any) => {
-    if (!search) return true;
+  // ⚡ Bolt: Using metadata wrapper pattern to optimize list filtering
+  // This prevents redundant string allocations and toLowerCase() calls during filtering
+  // while preserving original object references for stable re-renders.
+  const wrappedLeads = useMemo(() => {
+    const safeArray = leads || [];
+    return safeArray.map((l: any) => ({
+      item: l,
+      searchStr: `${l.full_name || ''} ${l.email || ''} ${l.jobs?.title || ''}`.toLowerCase(),
+    }));
+  }, [leads]);
+
+  const filtered = useMemo(() => {
+    if (!search) return wrappedLeads.map((w: any) => w.item);
     const s = search.toLowerCase();
-    return (
-      l.full_name?.toLowerCase().includes(s) ||
-      l.email?.toLowerCase().includes(s) ||
-      l.jobs?.title?.toLowerCase().includes(s)
-    );
-  });
+    return wrappedLeads.filter((w: any) => w.searchStr.includes(s)).map((w: any) => w.item);
+  }, [wrappedLeads, search]);
 
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
