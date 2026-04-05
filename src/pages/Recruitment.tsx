@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AddCandidateDialog } from '@/components/recruitment/AddCandidateDialog';
 import { CandidateActions } from '@/components/recruitment/CandidateActions';
 import { JobActions } from '@/components/recruitment/JobActions';
@@ -113,14 +113,14 @@ export default function Recruitment() {
     // }
   }, [jobs, activeJob]);
 
-  const activeJobData = jobs.find(j => j.id === activeJob);
+  const activeJobData = useMemo(() => jobs.find(j => j.id === activeJob), [jobs, activeJob]);
   const currentPipelineStages = (activeJobData as any)?.pipeline_stages || DEFAULT_STAGES;
 
-  const pipelineStages = currentPipelineStages.map((s: string) => ({
+  const pipelineStages = useMemo(() => currentPipelineStages.map((s: string) => ({
     id: s,
     name: s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' '),
     color: STAGE_COLORS[s] || 'bg-slate-500'
-  }));
+  })), [currentPipelineStages]);
 
   const { data: candidates = [], isLoading: loadingCandidates } = useQuery({
     queryKey: ['candidates', activeJob],
@@ -134,6 +134,15 @@ export default function Recruitment() {
     },
     enabled: !!activeJob,
   });
+
+  const candidatesByStage = useMemo(() => {
+    const map: Record<string, typeof candidates> = {};
+    candidates.forEach(c => {
+      if (!map[c.stage]) map[c.stage] = [];
+      map[c.stage].push(c);
+    });
+    return map;
+  }, [candidates]);
 
   return (
     <div className="space-y-6">
@@ -315,7 +324,7 @@ export default function Recruitment() {
                               <div className={`h-2.5 w-2.5 rounded-full ${stage.color} shadow-[0_0_8px_rgba(0,0,0,0.2)]`} />
                               <h3 className="font-bold text-[11px] uppercase tracking-widest text-foreground/80">{stage.name}</h3>
                               <div className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full border border-primary/10">
-                                {candidates.filter(c => c.stage === stage.id).length}
+                                {(candidatesByStage[stage.id] || []).length}
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -340,8 +349,7 @@ export default function Recruitment() {
                           </div>
 
                           <div className="space-y-3 min-h-[500px] p-2 rounded-2xl bg-muted/20 border border-dashed border-border/30">
-                            {candidates
-                              .filter(c => c.stage === stage.id)
+                            {(candidatesByStage[stage.id] || [])
                               .map((candidate) => (
                                 <motion.div
                                   key={candidate.id}
