@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
+import { useDebounce } from '@/hooks/use-debounce';
 
 // ⚡ Bolt: Hoisted static object configuration outside of component body
 // to prevent unnecessary memory reallocation on every render.
@@ -27,10 +28,14 @@ export default function Employees() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
   const [search, setSearch] = useState('');
+
+  // ⚡ Bolt: Debounced search query to prevent excessive database calls on every keystroke
+  const debouncedSearch = useDebounce(search, 300);
+
   const [view, setView] = useState<'grid' | 'list' | 'org'>('grid');
 
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['employees', search, profile?.company_id],
+    queryKey: ['employees', debouncedSearch, profile?.company_id],
     queryFn: async () => {
       let query = supabase
         .from('employees')
@@ -44,8 +49,8 @@ export default function Employees() {
         query = query.order('first_name');
       }
 
-      if (search) {
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,work_email.ilike.%${search}%`);
+      if (debouncedSearch) {
+        query = query.or(`first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%,work_email.ilike.%${debouncedSearch}%`);
       }
 
       const { data } = await query;
