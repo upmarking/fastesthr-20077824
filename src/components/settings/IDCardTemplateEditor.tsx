@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Eye, Code, Save, Info, Sparkles } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 export function IDCardTemplateEditor() {
   const { profile } = useAuthStore();
@@ -78,7 +79,11 @@ export function IDCardTemplateEditor() {
       html = html.replace(new RegExp(key, 'g'), val);
     });
 
-    return html;
+    return DOMPurify.sanitize(html, {
+      ADD_TAGS: ['style'],
+      ADD_ATTR: ['style'],
+      FORCE_BODY: true
+    });
   };
 
   if (isLoading) {
