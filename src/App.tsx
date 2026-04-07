@@ -10,6 +10,7 @@ import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { PublicRoute } from '@/components/layout/PublicRoute';
 import Landing from '@/pages/Landing';
 import BlogList from '@/pages/BlogList';
 import BlogPost from '@/pages/BlogPost';
@@ -124,10 +125,10 @@ function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/blog" element={<BlogList />} />
       <Route path="/blog/:slug" element={<BlogPost />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
       <Route path="/offer/:token" element={<OfferView />} />
       <Route path="/ai-interview/:hash" element={<Suspense fallback={<LazyFallback />}><AIInterview /></Suspense>} />
       <Route path="/id/:publicId" element={<PublicIDCard />} />
