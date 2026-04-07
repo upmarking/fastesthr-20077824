@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
@@ -11,11 +11,22 @@ import {
 } from '@/components/ui/dialog';
 import {
   Loader2, Send, Search, FileText, Clock, CheckCircle2, XCircle,
-  CalendarClock, Eye, Mail, Filter, ArrowUpDown, MailOpen, Ban
+  CalendarClock, Eye, Mail, Filter, ArrowUpDown, MailOpen, Ban,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DocumentRenderer } from './DocumentRenderer';
 import { EMPLOYEE_VARIABLES } from './SendDeskTemplates';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Document {
   id: string;
@@ -28,6 +39,7 @@ interface Document {
   letterhead_url: string | null;
   variable_values: Record<string, string>;
   status: string;
+  pdf_url: string | null;
   employee_id: string | null;
   created_at: string;
   employees?: { first_name: string; last_name: string; work_email: string | null; personal_email: string | null } | null;
@@ -61,6 +73,7 @@ export function SendDeskSendShare() {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [resendDoc, setResendDoc] = useState<Document | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -192,6 +205,14 @@ export function SendDeskSendShare() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      {doc.status === 'sent' && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-400 hover:text-amber-500 hover:bg-amber-400/10"
+                          title="Resend Document"
+                          onClick={() => setResendDoc(doc)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-8 w-8"
                         onClick={() => { setPreviewDoc(doc); setIsPreviewOpen(true); }}
                       >
@@ -323,6 +344,28 @@ export function SendDeskSendShare() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Resend Confirmation */}
+      <AlertDialog open={!!resendDoc} onOpenChange={(open) => !open && setResendDoc(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resend Document?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to resend this document? This will allow you to compose and send it again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setSelectedDoc(resendDoc);
+              setIsComposeOpen(true);
+              setResendDoc(null);
+            }}>
+              Confirm Resend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -338,34 +381,22 @@ function ComposeEmailDialog({ isOpen, onClose, document }: { isOpen: boolean; on
   const [scheduledAt, setScheduledAt] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  // Pre-fill from document
-  useState(() => {
-    if (document?.employees) {
+  // Reset/Pre-fill when doc changes
+  useEffect(() => {
+    if (isOpen && document?.employees) {
       setRecipientEmail(document.employees.work_email || document.employees.personal_email || '');
       setRecipientName(`${document.employees.first_name} ${document.employees.last_name}`);
       setSubject(document.name);
       setBodyHtml(`Dear ${document.employees.first_name},\n\nPlease find the attached document for your reference.\n\nBest regards,\nHR Team`);
+      setScheduledAt('');
+    } else if (!isOpen) {
+      setRecipientEmail('');
+      setRecipientName('');
+      setSubject('');
+      setBodyHtml('');
+      setScheduledAt('');
     }
-  });
-
-  // Reset on open
-  const resetFromDoc = () => {
-    if (document?.employees) {
-      setRecipientEmail(document.employees.work_email || document.employees.personal_email || '');
-      setRecipientName(`${document.employees.first_name} ${document.employees.last_name}`);
-      setSubject(document.name);
-      setBodyHtml(`Dear ${document.employees.first_name},\n\nPlease find the attached document for your reference.\n\nBest regards,\nHR Team`);
-    }
-    setScheduledAt('');
-  };
-
-  // Reset when doc changes
-  if (isOpen && document) {
-    // Only reset if the email is empty (first open)
-    if (!recipientEmail && document.employees) {
-      resetFromDoc();
-    }
-  }
+  }, [isOpen, document]);
 
   const handleSend = async () => {
     if (!recipientEmail || !subject || !bodyHtml) {
@@ -386,7 +417,7 @@ function ComposeEmailDialog({ isOpen, onClose, document }: { isOpen: boolean; on
             name: recipientName,
             employee_id: document?.employee_id || null,
             document_id: document?.id || null,
-            pdf_path: document?.id ? `${profile!.company_id}/${document.id}.pdf` : undefined,
+            pdf_path: document?.pdf_url || (document?.id ? `${profile!.company_id}/${document.id}.pdf` : undefined),
           }],
           subject,
           body_html: `<div style="font-family: sans-serif; line-height: 1.6;">${bodyAsHtml}</div>`,

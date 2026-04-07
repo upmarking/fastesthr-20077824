@@ -66,8 +66,13 @@ export const EMPLOYEE_VARIABLES = [
 export interface CustomVariable {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'current_date';
+  type: 'text' | 'number' | 'date' | 'current_date' | 'random';
   required: boolean;
+  random_config?: {
+    length: number;
+    type: 'text' | 'number' | 'mix';
+    prefix?: string;
+  };
 }
 
 interface SendDeskTemplate {
@@ -426,6 +431,13 @@ function TemplateEditorDialog({ isOpen, onClose, template }: { isOpen: boolean, 
       v.key,
       v.type === 'number' ? '12345' :
       (v.type === 'date' || v.type === 'current_date') ? new Date().toLocaleDateString() :
+      v.type === 'random' ? (
+        (v.random_config?.prefix || '') + 
+        (
+          v.random_config?.type === 'number' ? '12345678' :
+          v.random_config?.type === 'text' ? 'ABCDEFGH' : 'A1B2C3D4'
+        ).substring(0, v.random_config?.length || 8)
+      ) :
       `Sample ${v.key}`
     ])),
   };
@@ -644,11 +656,64 @@ function TemplateEditorDialog({ isOpen, onClose, template }: { isOpen: boolean, 
                           <option value="number">Number</option>
                           <option value="date">Date</option>
                           <option value="current_date">Current Date (Auto)</option>
+                          <option value="random">Random String (Auto)</option>
                         </select>
                       </div>
                     </div>
+
+                    {cv.type === 'random' && (
+                      <div className="space-y-3 mt-2">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prefix (Optional)</label>
+                          <Input
+                            value={cv.random_config?.prefix || ''}
+                            onChange={e => {
+                              const u = [...customVariables];
+                              u[idx] = { ...cv, random_config: { ...(cv.random_config || { length: 8, type: 'mix' }), prefix: e.target.value } };
+                              setCustomVariables(u);
+                            }}
+                            placeholder="e.g. DOC-"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Length</label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={cv.random_config?.length || 8}
+                              onChange={e => {
+                                const u = [...customVariables];
+                                u[idx] = { ...cv, random_config: { ...(cv.random_config || { length: 8, type: 'mix' }), length: parseInt(e.target.value) || 8 } };
+                                setCustomVariables(u);
+                              }}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Format</label>
+                            <select
+                              value={cv.random_config?.type || 'mix'}
+                              onChange={e => {
+                                const u = [...customVariables];
+                                u[idx] = { ...cv, random_config: { ...(cv.random_config || { length: 8, type: 'mix' }), type: e.target.value as any } };
+                                setCustomVariables(u);
+                              }}
+                              className="flex h-8 w-full rounded-md border border-border/50 bg-background/50 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+                            >
+                              <option value="text">Letters only</option>
+                              <option value="number">Numbers only</option>
+                              <option value="mix">Alphanumeric (Mix)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2">
-                      {cv.type !== 'current_date' ? (
+                      {cv.type !== 'current_date' && cv.type !== 'random' ? (
                         <>
                           <input type="checkbox" id={`req-${idx}`} checked={cv.required}
                             onChange={e => { const u = [...customVariables]; u[idx] = { ...cv, required: e.target.checked }; setCustomVariables(u); }}

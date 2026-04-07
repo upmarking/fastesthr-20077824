@@ -10,9 +10,11 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Loader2, Calendar, Banknote, Variable } from 'lucide-react';
+import { Loader2, Calendar, Banknote, Variable, FileSignature, Info, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CustomVariable } from './OfferTemplateEditor';
+import { SignaturePortal } from './SignaturePortal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface OfferDetailsDialogProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface OfferDetailsDialogProps {
     payout: number; 
     customVariableValues: Record<string, string>;
     totalDuration?: number;
+    managerSignature?: string;
   }) => void;
   candidateName: string;
   jobEmploymentType?: string;
@@ -48,6 +51,8 @@ export function OfferDetailsDialog({
   const [payout, setPayout] = useState('');
   const [totalDuration, setTotalDuration] = useState('');
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [managerSignature, setManagerSignature] = useState<string | null>(null);
+  const [showSignPortal, setShowSignPortal] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,6 +86,7 @@ export function OfferDetailsDialog({
       payout: parseFloat(payout),
       customVariableValues: customValues,
       totalDuration: jobEmploymentType === 'intern' && totalDuration ? parseInt(totalDuration, 10) : undefined,
+      managerSignature: managerSignature || undefined
     });
   };
 
@@ -172,7 +178,48 @@ export function OfferDetailsDialog({
               ))}
             </>
           )}
+
+          <div className="border-t border-border/30 pt-4 mt-6">
+            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">Company Representative Signature</Label>
+            {managerSignature ? (
+              <div className="relative group bg-slate-50 border rounded-lg p-4 flex items-center justify-center min-h-[80px]">
+                <img src={managerSignature} alt="Manager Signature" className="max-h-[60px] object-contain mix-blend-multiply" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => setManagerSignature(null)}
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                className="w-full border-dashed py-8 flex flex-col gap-2 group hover:border-primary/50 hover:bg-primary/5 transition-all"
+                onClick={() => setShowSignPortal(true)}
+              >
+                <div className="h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileSignature className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-xs font-medium">Add My Signature (Optional)</span>
+              </Button>
+            )}
+            
+            <Alert className="mt-4 bg-amber-50/50 border-amber-200/50 py-2">
+              <Info className="h-3 w-3 text-amber-600" />
+              <AlertDescription className="text-[10px] text-amber-800 leading-tight">
+                Signatures are never shared or saved to the company, and as per legal documentation, make sure you are using your legal Signatures here.
+              </AlertDescription>
+            </Alert>
+          </div>
         </div>
+
+        <SignaturePortal 
+          isOpen={showSignPortal}
+          onClose={() => setShowSignPortal(false)}
+          onSignatureReady={setManagerSignature}
+        />
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>

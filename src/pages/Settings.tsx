@@ -7,8 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Building, Bell, Shield, KeyIcon, Users, Mail, Settings2, Loader2, Send, Plus, Trash2, Clock, DollarSign, Percent, Gift, Globe } from 'lucide-react';
+import { Calendar, Building, Bell, Shield, KeyIcon, Users, Mail, Settings2, Loader2, Send, Plus, Trash2, Clock, DollarSign, Percent, Gift, Globe, Contact } from 'lucide-react';
 import DomainSettings from '@/pages/settings/DomainSettings';
+import { IDCardTemplateEditor } from '@/components/settings/IDCardTemplateEditor';
 import { useAuthStore } from '@/store/auth-store';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,6 +102,7 @@ export default function Settings() {
     { id: 'security', label: 'Security & SSO', icon: KeyIcon },
     { id: 'integrations', label: 'Integrations', icon: Users },
     { id: 'domains', label: 'Domain', icon: Globe },
+    { id: 'id_card', label: 'ID Card', icon: Contact },
   ];
 
   return (
@@ -143,6 +145,7 @@ export default function Settings() {
               {activeTab === 'security' && "Security and single sign-on settings."}
               {activeTab === 'integrations' && "Third-party integrations and API keys."}
               {activeTab === 'domains' && "Manage your workspace URL and custom domain."}
+              {activeTab === 'id_card' && "Design and customize your company's virtual ID cards."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -168,6 +171,8 @@ export default function Settings() {
               <IntegrationsTab />
             ) : activeTab === 'domains' ? (
               <DomainSettings />
+            ) : activeTab === 'id_card' ? (
+              <IDCardTemplateEditor />
             ) : null}
           </CardContent>
         </Card>

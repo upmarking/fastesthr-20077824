@@ -11,22 +11,30 @@ interface CompensationStructure {
   medical_insurance: number;
 }
 
-interface GenerateOfferParams {
-  htmlContent: string;
-  letterheadUrl?: string | null;
+interface GenerateOfferParams extends GeneratePDFParams {
   candidateName: string;
   jobTitle: string;
   joiningDate: string;
   payout: number | string;
   offerNumber: string;
-  companyId: string;
   candidateId: string;
+  offerLink?: string;
+  compensationStructure?: CompensationStructure | null;
+}
+
+interface GeneratePDFParams {
+  htmlContent: string;
+  letterheadUrl?: string | null;
+  companyId: string;
   isPredefinedHtml?: boolean;
   customVariableValues?: Record<string, string>;
   currency?: string;
   today?: string;
-  offerLink?: string;
-  compensationStructure?: CompensationStructure | null;
+}
+
+interface GenerateSendDeskParams extends GeneratePDFParams {
+  documentId: string;
+  documentName: string;
 }
 
 /**
@@ -77,46 +85,51 @@ function formatDateString(dateStr: string): string {
 /**
  * Builds the variable map from offer parameters.
  */
-function buildVariableMap(params: {
-  candidateName: string;
-  jobTitle: string;
-  joiningDate: string;
-  payout: number | string;
-  offerNumber: string;
-  customVariableValues?: Record<string, string>;
-  currency?: string;
-  today?: string;
-  offerLink?: string;
-  compensationStructure?: CompensationStructure | null;
-}): Record<string, string> {
-  const payoutNum = typeof params.payout === 'string' 
-    ? parseFloat(params.payout.replace(/[^0-9.-]+/g, "")) 
-    : params.payout;
+function buildVariableMap(params: Partial<GenerateOfferParams>): Record<string, string> {
+  const baseMap: Record<string, string> = {};
 
-  const formattedPayout = (payoutNum || 0).toLocaleString('en-US', {
-    style: 'currency',
-    currency: params.currency || 'USD',
-  });
+  if (params.candidateName) {
+    baseMap['{{Name}}'] = params.candidateName;
+    baseMap['{{candidate_name}}'] = params.candidateName;
+  }
+  
+  if (params.jobTitle) {
+    baseMap['{{Designation}}'] = params.jobTitle;
+    baseMap['{{job_title}}'] = params.jobTitle;
+  }
 
-  const formattedJoiningDate = formatDateString(params.joiningDate);
+  if (params.joiningDate) {
+    const formattedJoiningDate = formatDateString(params.joiningDate);
+    baseMap['{{Joined Date}}'] = formattedJoiningDate;
+    baseMap['{{joined_date}}'] = formattedJoiningDate;
+  }
+
+  if (params.payout !== undefined) {
+    const payoutNum = typeof params.payout === 'string' 
+      ? parseFloat(params.payout.replace(/[^0-9.-]+/g, "")) 
+      : params.payout;
+
+    const formattedPayout = (payoutNum || 0).toLocaleString('en-US', {
+      style: 'currency',
+      currency: params.currency || 'USD',
+    });
+    baseMap['{{Payout}}'] = formattedPayout;
+    baseMap['{{payout}}'] = formattedPayout;
+  }
+
+  if (params.offerNumber) {
+    baseMap['{{Offer Number}}'] = params.offerNumber;
+    baseMap['{{offer_number}}'] = params.offerNumber;
+  }
+
+  if (params.offerLink) {
+    baseMap['{{Offer Link}}'] = params.offerLink || '';
+    baseMap['{{offer_link}}'] = params.offerLink || '';
+  }
+
   const formattedToday = params.today || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-
-  const baseMap: Record<string, string> = {
-    '{{Name}}': params.candidateName,
-    '{{candidate_name}}': params.candidateName,
-    '{{Designation}}': params.jobTitle,
-    '{{job_title}}': params.jobTitle,
-    '{{Joined Date}}': formattedJoiningDate,
-    '{{joined_date}}': formattedJoiningDate,
-    '{{Payout}}': formattedPayout,
-    '{{payout}}': formattedPayout,
-    '{{Offer Number}}': params.offerNumber,
-    '{{offer_number}}': params.offerNumber,
-    '{{Offer Link}}': params.offerLink || '',
-    '{{offer_link}}': params.offerLink || '',
-    '{{Today}}': formattedToday,
-    '{{today}}': formattedToday,
-  };
+  baseMap['{{Today}}'] = formattedToday;
+  baseMap['{{today}}'] = formattedToday;
 
   // Merge compensation structure variables
   if (params.compensationStructure) {
@@ -227,31 +240,37 @@ function buildRawHtmlElement(html: string, letterheadUrl?: string | null): HTMLE
 }
 
 /**
- * Main: generates a PDF blob from offer HTML, uploads it to Supabase Storage, returns the path and the final manipulated HTML.
+ * Core function to generate and upload PDF
  */
-export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Promise<{ pdfPath: string, manipulatedHtml: string }> {
-  const { htmlContent, letterheadUrl, companyId, candidateId, candidateName, isPredefinedHtml = false, currency } = params;
+async function generateAndUploadPDF(
+  params: GeneratePDFParams,
+  bucketName: string,
+  fileNamePrefix: string
+): Promise<{ pdfPath: string; manipulatedHtml: string }> {
+  const { htmlContent, letterheadUrl, companyId, isPredefinedHtml = false } = params;
 
-  // 1. Replace template variables
+  // 1. Replace template variables (if any provided in customVariableValues)
+  // For SendDesk, variables are usually already replaced before calling this, 
+  // but we support it for consistency.
   const vars = buildVariableMap(params);
   const finalHtml = substituteVariables(htmlContent, vars);
 
-  // 2. Build the source element — completely different paths for each mode
+  // 2. Build the source element
   const pdfElement = isPredefinedHtml
     ? buildPredefinedHtmlElement(finalHtml)
     : buildRawHtmlElement(finalHtml, letterheadUrl);
 
-  // 3. Configure html2pdf options — zero margin for predefined, 10mm for raw
+  // 3. Configure html2pdf options
   const opt = {
     margin: (isPredefinedHtml ? [0, 0, 0, 0] : [10, 10, 10, 10]) as [number, number, number, number],
-    filename: `Offer-${candidateName.replace(/\s+/g, '-')}.pdf`,
+    filename: `${fileNamePrefix}.pdf`,
     image: { type: 'jpeg' as const, quality: 1 },
     html2canvas: { 
       scale: 2, 
       useCORS: true,
       scrollY: 0,
       scrollX: 0,
-      windowWidth: 794 // 210mm in pixels at 96 dpi to perfectly lock layout calculations.
+      windowWidth: 794 
     },
     jsPDF: isPredefinedHtml 
       ? { unit: 'px' as const, format: [794, 1123] as [number, number], orientation: 'portrait' as const, hotfixes: ["px_scaling"] }
@@ -259,55 +278,43 @@ export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Pr
     pagebreak: isPredefinedHtml ? { mode: [] } : { mode: ['css', 'legacy'] }
   };
 
-  // 4. Generate PDF blob safely to avoid scrollbar layout shifts during capture
   let pdfBlob: Blob;
   const originalOverflow = document.body.style.overflow;
   try {
     document.body.style.overflow = 'hidden';
-
-    // Must attach pdfElement temporarily to the actual document so `document.getElementById` works inside the template's scripts
     pdfElement.style.position = 'absolute';
     pdfElement.style.top = '-9999px';
     pdfElement.style.left = '-9999px';
     pdfElement.style.visibility = 'hidden';
     document.body.appendChild(pdfElement);
 
-    // Re-create and execute any <script> tags found in the template (innerHTML does not run them)
     const scripts = Array.from(pdfElement.querySelectorAll('script'));
-    const executableScripts: HTMLScriptElement[] = [];
-
     for (const oldScript of scripts) {
       const newScript = document.createElement('script');
       newScript.textContent = oldScript.textContent || '';
       Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
       oldScript.parentNode?.replaceChild(newScript, oldScript);
-      executableScripts.push(newScript);
     }
 
-    // Wait a brief moment to allow the microtasks and synchronous JS (like CTC calculations) to update the DOM
     if (scripts.length > 0) {
       await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    // Capture the manipulated HTML *after* the scripts have run, so the email/database gets the calculated numbers
     const manipulatedHtml = pdfElement.innerHTML;
-
-    // Remove the hiding styles so HTML2Canvas renders it correctly
     pdfElement.style.position = '';
     pdfElement.style.top = '';
     pdfElement.style.left = '';
     pdfElement.style.visibility = '';
+    
     if (document.body.contains(pdfElement)) {
       document.body.removeChild(pdfElement);
     }
 
-    // Now snap the PDF!
     pdfBlob = await html2pdf().set(opt).from(pdfElement).output('blob');
 
-    // 5. Upload to Supabase Storage
-    const fileName = `${companyId}/${candidateId}_offer_${Date.now()}.pdf`;
+    const fileName = `${companyId}/${fileNamePrefix}_${Date.now()}.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('offer_letters')
+      .from(bucketName)
       .upload(fileName, pdfBlob, {
         contentType: 'application/pdf',
         upsert: true,
@@ -328,12 +335,26 @@ export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Pr
 }
 
 /**
+ * Generates a PDF blob from offer HTML, uploads it to Supabase Storage, returns the path and the final manipulated HTML.
+ */
+export async function generateAndUploadOfferPDF(params: GenerateOfferParams): Promise<{ pdfPath: string, manipulatedHtml: string }> {
+  return generateAndUploadPDF(params, 'offer_letters', `Offer-${params.candidateName.replace(/\s+/g, '-')}`);
+}
+
+/**
+ * Generates a PDF blob from SendDesk HTML, uploads it to Supabase Storage, returns the path.
+ */
+export async function generateAndUploadSendDeskPDF(params: GenerateSendDeskParams): Promise<{ pdfPath: string }> {
+  const result = await generateAndUploadPDF(params, 'senddesk-documents', `${params.documentId}`);
+  return { pdfPath: result.pdfPath };
+}
+
+/**
  * Utility: replaces variables in HTML without generating a PDF.
- * Used by CandidateActions to get the final HTML for inline storage.
  */
 export function replaceHtmlVariables(
   htmlContent: string,
-  params: Omit<GenerateOfferParams, 'htmlContent' | 'companyId' | 'candidateId' | 'letterheadUrl' | 'isPredefinedHtml'>
+  params: Partial<GenerateOfferParams>
 ): string {
   const vars = buildVariableMap(params);
   return substituteVariables(htmlContent, vars);

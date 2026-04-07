@@ -33,9 +33,10 @@ import { generateSampleCSV } from '@/lib/csv-parser';
 
 interface AddCandidateDialogProps {
   jobId: string;
+  variant?: 'full' | 'icon';
 }
 
-export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
+export function AddCandidateDialog({ jobId, variant = 'full' }: AddCandidateDialogProps) {
   const [isIndividualOpen, setIsIndividualOpen] = useState(false);
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const { profile } = useAuthStore();
@@ -116,17 +117,31 @@ export function AddCandidateDialog({ jobId }: AddCandidateDialogProps) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="h-8 w-8 relative bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group transition-all rounded-lg shadow-sm hover:shadow-md animate-in fade-in zoom-in duration-300"
-            title="Add Applicant"
-          >
-            <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
-            <div className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
-              <Plus className="h-2 w-2 font-black" />
-            </div>
-          </Button>
+          {variant === 'full' ? (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-8 gap-2 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary group transition-all rounded-lg px-3 shadow-sm hover:shadow-md animate-in fade-in zoom-in duration-300"
+            >
+              <Users className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-tight">Add Applicant</span>
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </Button>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all rounded-lg relative group/icon"
+              title="Add Applicant"
+            >
+              <div className="relative">
+                <Users className="h-4 w-4 group-hover/icon:scale-110 transition-transform" />
+                <div className="absolute -bottom-1 -right-1 bg-primary text-white rounded-full p-0.5 border-2 border-background">
+                  <Plus className="h-2 w-2" />
+                </div>
+              </div>
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 

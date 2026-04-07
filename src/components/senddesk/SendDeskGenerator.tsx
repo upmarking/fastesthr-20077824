@@ -16,6 +16,7 @@ import {
 import { toast } from 'sonner';
 import { DocumentRenderer, replaceDocVariables } from './DocumentRenderer';
 import { EMPLOYEE_VARIABLES, type CustomVariable } from './SendDeskTemplates';
+import { generateAndUploadSendDeskPDF } from '@/lib/pdf-generator';
 
 const CATEGORY_ICONS: Record<string, any> = {
   onboarding: UserPlus,
@@ -29,6 +30,20 @@ const CATEGORY_COLORS: Record<string, string> = {
   lifecycle: 'text-blue-400',
   offboarding: 'text-amber-400',
   general: 'text-violet-400',
+};
+
+const generateRandomString = (length: number, type: 'text' | 'number' | 'mix') => {
+  const chars = {
+    text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    number: '0123456789',
+    mix: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  };
+  const charset = chars[type] || chars.mix;
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return result;
 };
 
 interface Template {
@@ -165,6 +180,9 @@ export function SendDeskGenerator() {
       selectedTemplate.custom_variables.forEach(cv => {
         if (cv.type === 'current_date') {
           vars[cv.key] = new Date().toLocaleDateString();
+        } else if (cv.type === 'random') {
+          const config = cv.random_config || { length: 8, type: 'mix' };
+          vars[cv.key] = (config.prefix || '') + generateRandomString(config.length, config.type);
         }
       });
     }
@@ -179,7 +197,7 @@ export function SendDeskGenerator() {
 
     // Validate required custom variables
     const missingRequired = selectedTemplate.custom_variables
-      ?.filter(cv => cv.required && cv.type !== 'current_date' && !customVarValues[cv.key]?.trim());
+      ?.filter(cv => cv.required && cv.type !== 'current_date' && cv.type !== 'random' && !customVarValues[cv.key]?.trim());
     if (missingRequired?.length) {
       toast.error(`Please fill required fields: ${missingRequired.map(v => v.key).join(', ')}`);
       return;
@@ -197,9 +215,20 @@ export function SendDeskGenerator() {
         const vars = buildVariables(emp);
         const renderedHtml = replaceDocVariables(selectedTemplate.html_content, vars);
 
+        const docId = crypto.randomUUID();
+        const { pdfPath } = await generateAndUploadSendDeskPDF({
+          htmlContent: renderedHtml,
+          letterheadUrl: selectedTemplate.letterhead_url,
+          companyId: profile!.company_id!,
+          documentId: docId,
+          documentName: selectedTemplate.name,
+          isPredefinedHtml: selectedTemplate.is_predefined_html,
+        });
+
         const { error } = await supabase
           .from('senddesk_documents')
           .insert({
+            id: docId,
             company_id: profile!.company_id!,
             template_id: selectedTemplate.id,
             employee_id: emp.id,
@@ -208,6 +237,7 @@ export function SendDeskGenerator() {
             category: selectedTemplate.category,
             sub_category: selectedTemplate.sub_category,
             html_content: renderedHtml,
+            pdf_url: pdfPath,
             variable_values: vars,
             status: 'generated',
             is_predefined_html: selectedTemplate.is_predefined_html,
@@ -446,7 +476,7 @@ export function SendDeskGenerator() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {selectedTemplate.custom_variables
-                  .filter(cv => cv.type !== 'current_date')
+                  .filter(cv => cv.type !== 'current_date' && cv.type !== 'random')
                   .map(cv => (
                     <div key={cv.key} className="space-y-1">
                       <label className="text-xs font-medium text-muted-foreground">

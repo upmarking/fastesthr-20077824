@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Briefcase, Users, Plus, Loader2, Send, Star, Pencil,
-  Share2, ExternalLink, UserCheck, BarChart3, Crown, Sparkles, Bot, Zap, Layers
+  Share2, ExternalLink, UserCheck, BarChart3, Crown, Sparkles, Bot, Zap, Layers, BrainCircuit
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +24,7 @@ import { RecruitmentLeadsBoard } from './recruitment/RecruitmentLeadsBoard';
 import { RecruitmentTeam } from './recruitment/RecruitmentTeam';
 import { RecruitmentAnalytics } from './recruitment/RecruitmentAnalytics';
 import { JobSelectionView } from '@/components/recruitment/JobSelectionView';
+import { RecruiterCopilot } from '@/components/recruitment/RecruiterCopilot';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,6 +54,7 @@ export default function Recruitment() {
   const [activeJob, setActiveJob] = useState<string | null>(null);
   const [isScoreDialogOpen, setIsScoreDialogOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [assignDialog, setAssignDialog] = useState<{
     open: boolean; candidateId: string; candidateName: string;
     currentAssignee: string | null; jobId: string;
@@ -199,6 +201,20 @@ export default function Recruitment() {
                   </Button>
                 )}
 
+                <Button
+                  variant={isCopilotOpen ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsCopilotOpen(!isCopilotOpen)}
+                  className={`rounded-full px-4 gap-2 transition-all duration-300 ${
+                    isCopilotOpen 
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
+                      : 'hover:bg-primary/5'
+                  }`}
+                >
+                  <BrainCircuit className="w-4 h-4" />
+                  AI Copilot
+                </Button>
+
                 <AddCandidateDialog jobId={activeJob!} />
               </>
             )}
@@ -248,6 +264,7 @@ export default function Recruitment() {
                 loading={loadingJobs}
                 onSelectJob={(id) => setActiveJob(id)}
                 onCreateJob={() => navigate('/recruitment/new')}
+                canManageJobs={canManageJobs}
               />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-left-4 duration-500">
@@ -291,6 +308,14 @@ export default function Recruitment() {
                           {activeJob === job.id && (
                             <div className="h-1 w-1 rounded-full bg-white animate-pulse" />
                           )}
+                          {canManageJobs && (
+                            <div 
+                              className={`ml-2 transition-opacity ${activeJob === job.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <JobActions jobId={job.id} onDeleted={() => activeJob === job.id && setActiveJob(null)} />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </CardContent>
@@ -320,7 +345,7 @@ export default function Recruitment() {
                             </div>
                             <div className="flex items-center gap-1.5">
                               {stage.id === 'applied' && canManageJobs && (
-                                <AddCandidateDialog jobId={activeJob!} />
+                                <AddCandidateDialog jobId={activeJob!} variant="icon" />
                               )}
                               {canManageJobs && (
                                 <Button
@@ -456,12 +481,12 @@ export default function Recruitment() {
                         </div>
                       ))
                     )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </TabsContent>
-      )}
+            )}
+          </TabsContent>
+        )}
 
         {stageAIConfig.open && activeJob && (
           <StageAIConfigDialog
@@ -518,6 +543,13 @@ export default function Recruitment() {
           jobId={assignDialog.jobId}
         />
       )}
+
+      <RecruiterCopilot 
+        isOpen={isCopilotOpen} 
+        onClose={() => setIsCopilotOpen(false)}
+        activeJob={activeJobData || null}
+        candidates={candidates}
+      />
     </div>
   );
 }

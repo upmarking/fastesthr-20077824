@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, Users, Plus, Sparkles, ArrowRight, Zap, Target, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { JobActions } from './JobActions';
 
 interface Job {
   id: string;
@@ -17,9 +18,10 @@ interface JobSelectionViewProps {
   onSelectJob: (id: string) => void;
   onCreateJob: () => void;
   loading: boolean;
+  canManageJobs?: boolean;
 }
 
-export function JobSelectionView({ jobs, onSelectJob, onCreateJob, loading }: JobSelectionViewProps) {
+export function JobSelectionView({ jobs, onSelectJob, onCreateJob, loading, canManageJobs }: JobSelectionViewProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
@@ -91,6 +93,15 @@ export function JobSelectionView({ jobs, onSelectJob, onCreateJob, loading }: Jo
                   Posted {new Date(job.created_at).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
+
+              {canManageJobs && (
+                <div 
+                  className="absolute top-3 right-3 z-20"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <JobActions jobId={job.id} />
+                </div>
+              )}
 
               <CardContent className="mt-auto pt-4 border-t border-border/10">
                 <div className="grid grid-cols-2 gap-4">

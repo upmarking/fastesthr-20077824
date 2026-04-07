@@ -36,6 +36,8 @@ import Onboarding from '@/pages/Onboarding';
 import ExitManagement from '@/pages/ExitManagement';
 import HolidayCalendar from '@/pages/HolidayCalendar';
 import SendDesk from '@/pages/SendDesk';
+import VirtualIDCard from '@/pages/employees/VirtualIDCard';
+import PublicIDCard from '@/pages/public/PublicIDCard';
 
 
 import Companies from '@/pages/admin/Companies';
@@ -128,6 +130,7 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/offer/:token" element={<OfferView />} />
       <Route path="/ai-interview/:hash" element={<Suspense fallback={<LazyFallback />}><AIInterview /></Suspense>} />
+      <Route path="/id/:publicId" element={<PublicIDCard />} />
 
 
       {/* Company Career Pages */}
@@ -162,6 +165,7 @@ function AppRoutes() {
       <Route path="/exit-management" element={withLayout(<ExitManagement />)} />
       <Route path="/holidays" element={withLayout(<HolidayCalendar />)} />
       <Route path="/senddesk" element={withLayout(<SendDesk />)} />
+      <Route path="/id-card" element={withLayout(<VirtualIDCard />)} />
       <Route path="/billing" element={withLayout(<Billing />, 'company_admin')} />
       <Route path="/roles" element={withLayout(<Roles />, 'company_admin')} />
       <Route path="/settings/*" element={withLayout(<Settings />, 'company_admin')} />

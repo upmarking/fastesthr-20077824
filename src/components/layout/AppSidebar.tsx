@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Users, Clock, CalendarDays, DollarSign, BarChart3,
   Briefcase, GraduationCap, Headset, Megaphone, PieChart, Settings,
   Globe, Building2, CreditCard, Server, ChevronLeft, LogOut, Zap,
-  FileText, UserPlus, Network, UserMinus, CalendarCheck, ChevronRight, Send, Shield
+  FileText, UserPlus, Network, UserMinus, CalendarCheck, ChevronRight, Send, Shield, Contact
 } from 'lucide-react';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -43,6 +43,7 @@ const fastBoardNav: NavItem[] = [
   { title: 'Holidays', url: '/holidays', icon: CalendarCheck, roles: ALL_ROLES },
   { title: 'Documents', url: '/documents', icon: FileText, roles: ALL_ROLES },
   { title: 'Learning', url: '/learning', icon: GraduationCap, roles: ALL_ROLES },
+  { title: 'Virtual ID Card', url: '/id-card', icon: Contact, roles: ALL_ROLES },
 ];
 
 const managementNav: NavItem[] = [
