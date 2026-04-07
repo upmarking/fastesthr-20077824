@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
@@ -141,15 +141,31 @@ export function RecruitmentLeadsBoard() {
     enabled: !!profile?.company_id,
   });
 
-  const filtered = leads.filter((l: any) => {
-    if (!search) return true;
+  // ⚡ Bolt: Optimize list filtering using metadata wrapper pattern
+  // Precalculate lowercase strings once per lead instead of every render/keystroke
+  // Expected impact: Significant reduction in CPU time during search on large lead boards
+  const searchableLeads = useMemo(() => {
+    return leads.map((l: any) => ({
+      lead: l,
+      fullNameLower: (l.full_name || '').toLowerCase(),
+      emailLower: (l.email || '').toLowerCase(),
+      jobTitleLower: (l.jobs?.title || '').toLowerCase()
+    }));
+  }, [leads]);
+
+  // ⚡ Bolt: Memoize the filtered list to prevent unnecessary re-renders of child components
+  // and map back to the original `lead` reference to preserve referential identity.
+  const filtered = useMemo(() => {
+    if (!search) return leads;
     const s = search.toLowerCase();
-    return (
-      l.full_name?.toLowerCase().includes(s) ||
-      l.email?.toLowerCase().includes(s) ||
-      l.jobs?.title?.toLowerCase().includes(s)
-    );
-  });
+    return searchableLeads
+      .filter((m: any) =>
+        m.fullNameLower.includes(s) ||
+        m.emailLower.includes(s) ||
+        m.jobTitleLower.includes(s)
+      )
+      .map((m: any) => m.lead);
+  }, [leads, searchableLeads, search]);
 
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
