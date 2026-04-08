@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, Clock, MapPin, Calendar, Video, Users, LogOut, Loader2, ArrowRight, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { isSafeUrl } from '@/lib/utils';
 
 const STAGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   applied: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
@@ -207,7 +208,7 @@ export default function CandidatePortal() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {interview.meeting_link && interview.status === 'scheduled' && (
+                              {interview.meeting_link && interview.status === 'scheduled' && isSafeUrl(interview.meeting_link) && (
                                 <a
                                   href={interview.meeting_link}
                                   target="_blank"
