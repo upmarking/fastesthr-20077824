@@ -2,3 +2,8 @@
 **Vulnerability:** XSS/HTML Injection vulnerability in `src/lib/pdf-generator.ts` where unescaped user inputs (e.g., candidate names, custom template variables) were directly substituted into HTML strings before being rendered to PDF and persisted.
 **Learning:** The PDF generator natively executes `<script>` tags found in templates for features like CTC calculations before capturing `.innerHTML`. Using robust sanitizers like DOMPurify on the full template would strip these required scripts and break the feature.
 **Prevention:** Rather than sanitizing the entire compiled template block or pulling in heavy dependencies, escape individual variable values (e.g., `&`, `<`, `>`, `"`, `'`) specifically during variable substitution. This ensures user input is safe while preserving the template's intentional functional elements.
+
+## 2024-03-24 - Protocol-Based XSS in href Attributes
+**Vulnerability:** The application was vulnerable to protocol-based Cross-Site Scripting (XSS) because user-provided URLs (like company websites, LinkedIn profiles, and interview meeting links) were directly rendered in `href` attributes of `<a>` tags without validating the URL protocol. This would allow an attacker to provide a URL starting with `javascript:` to execute arbitrary code when clicked.
+**Learning:** React automatically mitigates standard XSS in element content by escaping strings, but it does NOT protect against malicious URI schemes in attributes like `href` or `src`. Validation is required before rendering dynamic URLs.
+**Prevention:** Implement and use a robust URL validation utility (e.g., `isSafeUrl`) that parses the URL and explicitly whitelists safe protocols (`http:`, `https:`). Conditionally render the link only if the URL passes this validation.
