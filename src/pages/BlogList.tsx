@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Footer } from '@/components/layout/Footer';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -13,10 +13,11 @@ const BlogList = () => {
     document.title = "Insights & Intelligence | FastestHR";
   }, []);
 
-  const filteredBlogs = BLOGS.filter(blog => 
+  // ⚡ Bolt: Memoize filtered list to prevent redundant re-evaluations on every render
+  const filteredBlogs = useMemo(() => BLOGS.filter(blog =>
     blog.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     blog.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [searchTerm]);
 
   return (
     <div className="min-h-screen bg-black text-zinc-50 font-sans selection:bg-cyan-500/30">

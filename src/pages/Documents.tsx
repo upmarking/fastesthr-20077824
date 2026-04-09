@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Download, Trash2, Search, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,11 +89,12 @@ export default function Documents() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = documents.filter(doc => {
+  // ⚡ Bolt: Memoize filtered list to prevent redundant re-evaluations on every render
+  const filteredDocs = useMemo(() => documents.filter(doc => {
     const matchSearch = doc.name.toLowerCase().includes(search.toLowerCase());
     const matchCategory = activeTab === 'all' || doc.category === activeTab;
     return matchSearch && matchCategory;
-  });
+  }), [documents, search, activeTab]);
 
   const getExpiryStatus = (expiresAt?: string) => {
     if (!expiresAt) return null;
