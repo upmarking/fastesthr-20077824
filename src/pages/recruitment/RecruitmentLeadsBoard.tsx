@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
@@ -141,7 +141,8 @@ export function RecruitmentLeadsBoard() {
     enabled: !!profile?.company_id,
   });
 
-  const filtered = leads.filter((l: any) => {
+  // ⚡ Bolt: Memoize filtered list to prevent redundant re-evaluations on every render
+  const filtered = useMemo(() => leads.filter((l: any) => {
     if (!search) return true;
     const s = search.toLowerCase();
     return (
@@ -149,7 +150,7 @@ export function RecruitmentLeadsBoard() {
       l.email?.toLowerCase().includes(s) ||
       l.jobs?.title?.toLowerCase().includes(s)
     );
-  });
+  }), [leads, search]);
 
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
