@@ -28,6 +28,38 @@ Deno.serve(async (req) => {
 
     const { action, candidateId, jobId, transcript, hash } = await req.json();
 
+    // Authenticate Request
+    let isAuthorized = false;
+    if (hash) {
+      // Validate hash
+      const { data: interview } = await supabaseClient
+        .from('ai_interviews')
+        .select('id, expires_at, status')
+        .eq('link_hash', hash)
+        .single();
+
+      if (interview && new Date(interview.expires_at) > new Date() && interview.status !== 'completed') {
+        isAuthorized = true;
+      }
+    } else {
+      // Validate Authorization Header
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+        if (user && !authError) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: 'Unauthorized Access' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     if (action === 'token') {
       // In a real scenario, you'd mint an ephemeral token or just return the API Key if server-side.
       // But for Gemini Live BidiGenerateContent, the client needs the API key if connecting directly,
