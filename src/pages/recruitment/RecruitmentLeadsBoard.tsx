@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
-  Star, Clock, ChevronDown, LayoutList, Columns, Loader2
+  Star, Clock, ChevronDown, LayoutList, Columns, Loader2,
+  Mail, Phone
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -344,7 +345,22 @@ export function RecruitmentLeadsBoard() {
                     </Avatar>
                     <div className="min-w-0">
                       <p className="font-medium text-sm truncate">{lead.full_name}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{lead.email}</p>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate font-medium">
+                          <Mail className="h-2.5 w-2.5 text-primary/60" />
+                          <a href={`mailto:${lead.email}`} className="hover:text-primary transition-colors">
+                            {lead.email}
+                          </a>
+                        </div>
+                        {lead.phone && (
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate font-medium">
+                            <Phone className="h-2.5 w-2.5 text-primary/60" />
+                            <a href={`tel:${lead.phone}`} className="hover:text-primary transition-colors">
+                              {lead.phone}
+                            </a>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -454,8 +470,27 @@ export function RecruitmentLeadsBoard() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{lead.full_name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{lead.jobs?.title}</p>
+                            <p className="text-sm font-bold truncate leading-none mb-1">{lead.full_name}</p>
+                            <div className="flex flex-col gap-0.5 mb-1.5 mt-1 border-y border-border/5 py-1">
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate font-medium">
+                                <Mail className="h-2.5 w-2.5 text-primary/60" />
+                                <a href={`mailto:${lead.email}`} className="truncate hover:text-primary transition-colors">
+                                  {lead.email}
+                                </a>
+                              </div>
+                              {lead.phone && (
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate font-medium">
+                                  <Phone className="h-2.5 w-2.5 text-primary/60" />
+                                  <a href={`tel:${lead.phone}`} className="hover:text-primary transition-colors">
+                                    {lead.phone}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground truncate font-bold uppercase tracking-tight opacity-70 group-hover:opacity-100 transition-opacity">
+                              <Briefcase className="h-2.5 w-2.5 inline mr-1" />
+                              {lead.jobs?.title}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">

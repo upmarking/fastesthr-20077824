@@ -25,27 +25,27 @@ export function BulkUploadDialog({ jobId, isOpen, onOpenChange }: BulkUploadDial
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [candidates, setCandidates] = useState<BulkCandidate[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async (candidatesToInsert: BulkCandidate[]) => {
       if (!jobId || !profile?.company_id) throw new Error('Missing required info');
       
-      const payload = candidatesToInsert.map(c => ({
-        job_id: jobId,
-        company_id: profile.company_id,
-        full_name: c.full_name,
-        email: c.email,
-        phone: c.phone || null,
-        source: 'bulk_upload',
-        stage: 'applied',
-        parsed_data: {
-          linkedin: c.linkedin || null,
-          experience: c.experience || null,
-          location: c.location || null,
-          education: c.education || null,
-        }
-      }));
+      const payload = candidatesToInsert.map(c => {
+        // Separate core fields from extra fields
+        const { full_name, email, phone, ...extra } = c;
+        return {
+          job_id: jobId,
+          company_id: profile.company_id,
+          full_name,
+          email,
+          phone: phone || null,
+          source: 'bulk_upload',
+          stage: 'applied',
+          parsed_data: extra // Store all extra columns dynamically
+        };
+      });
 
       const { data, error } = await supabase
         .from('candidates')
@@ -85,12 +85,13 @@ export function BulkUploadDialog({ jobId, isOpen, onOpenChange }: BulkUploadDial
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      const parsed = parseCandidatesCSV(text);
-      if (parsed.length === 0) {
+      const { headers: parsedHeaders, candidates: parsedCandidates } = parseCandidatesCSV(text);
+      if (parsedCandidates.length === 0) {
         toast.error('No valid candidates found in CSV. Please check headers: Name, Email, etc.');
       } else {
-        setCandidates(parsed);
-        toast.success(`Found ${parsed.length} candidates`);
+        setHeaders(parsedHeaders);
+        setCandidates(parsedCandidates);
+        toast.success(`Found ${parsedCandidates.length} candidates`);
       }
       setIsParsing(false);
     };
@@ -170,33 +171,40 @@ export function BulkUploadDialog({ jobId, isOpen, onOpenChange }: BulkUploadDial
                 </Button>
               </div>
 
-              <div className="border border-border/50 rounded-xl overflow-hidden shadow-inner bg-card/50">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Name</th>
-                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Email</th>
-                      <th className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest text-muted-foreground">Location</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {candidates.slice(0, 5).map((c, i) => (
-                      <tr key={i} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3 font-medium">{c.full_name}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{c.email}</td>
-                        <td className="px-4 py-3 text-[11px] font-bold text-primary/70 uppercase">{c.location || '-'}</td>
+                <div className="max-h-[300px] overflow-auto border border-border/50 rounded-xl shadow-inner bg-card/50">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 sticky top-0 z-10">
+                      <tr>
+                        {headers.map((header, i) => (
+                          <th key={i} className="px-4 py-3 text-left font-bold text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                            {header}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                    {candidates.length > 5 && (
-                      <tr className="bg-muted/10">
-                        <td colSpan={3} className="px-4 py-3 text-center text-xs text-muted-foreground font-medium italic">
-                          + {candidates.length - 5} more applicants identified
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {candidates.slice(0, 10).map((c, i) => (
+                        <tr key={i} className="hover:bg-muted/30 transition-colors">
+                          {headers.map((header, j) => {
+                            const key = header.toLowerCase().replace(/\s+/g, '_');
+                            return (
+                              <td key={j} className={`px-4 py-3 whitespace-nowrap ${j === 0 ? 'font-medium' : 'text-muted-foreground'}`}>
+                                {c[key] || '-'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                      {candidates.length > 10 && (
+                        <tr className="bg-muted/10">
+                          <td colSpan={headers.length} className="px-4 py-3 text-center text-xs text-muted-foreground font-medium italic">
+                            + {candidates.length - 10} more applicants identified
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
             </div>
           )}
 

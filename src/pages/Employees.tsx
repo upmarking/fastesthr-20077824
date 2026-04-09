@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
+import { OrgChartPro } from '@/components/employees/OrgChartPro';
 
 // ⚡ Bolt: Hoisted static object configuration outside of component body
 // to prevent unnecessary memory reallocation on every render.
@@ -159,11 +160,7 @@ export default function Employees() {
           </div>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <EmployeeOrgChart employees={employees} />
-          </div>
-        </Card>
+        <OrgChartPro employees={employees} />
       )}
     </div>
   );

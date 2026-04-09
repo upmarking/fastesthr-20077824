@@ -2,53 +2,60 @@ export interface BulkCandidate {
   full_name: string;
   email: string;
   phone?: string;
-  linkedin?: string;
-  experience?: string;
-  location?: string;
-  education?: string;
+  [key: string]: any;
 }
 
-export function parseCandidatesCSV(csvText: string): BulkCandidate[] {
-  const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
-  if (lines.length < 2) return [];
+export interface ParsedCandidates {
+  headers: string[];
+  candidates: BulkCandidate[];
+}
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const headerMap: Record<string, number> = {};
+export function parseCandidatesCSV(csvText: string): ParsedCandidates {
+  const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
+  if (lines.length < 2) return { headers: [], candidates: [] };
+
+  const originalHeaders = lines[0].split(',').map(h => h.trim());
+  const lowerHeaders = originalHeaders.map(h => h.toLowerCase().replace(/\s+/g, '_'));
   
-  headers.forEach((header, index) => {
+  const headerMap: Record<string, number> = {};
+  lowerHeaders.forEach((header, index) => {
     headerMap[header] = index;
   });
 
-  // Required headers: Name, Email
-  if (!headerMap['name'] || !headerMap['email']) {
-    // Basic mapping: 0 -> name, 1 -> email
-    // But let's be more flexible
-  }
-
-  const result: BulkCandidate[] = [];
+  const candidates: BulkCandidate[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim());
     if (values.length < 2) continue;
 
-    const candidate: BulkCandidate = {
-      full_name: values[headerMap['name']] || values[0],
-      email: values[headerMap['email']] || values[1],
-      phone: values[headerMap['phone']],
-      linkedin: values[headerMap['linkedin']],
-      experience: values[headerMap['experience']],
-      location: values[headerMap['location']],
-      education: values[headerMap['education']],
-    };
+    const candidate: any = {};
+    
+    // First, map all values to their lowercase header keys
+    lowerHeaders.forEach((header, index) => {
+      candidate[header] = values[index] || '';
+    });
+
+    // Ensure full_name is set (handle "name" or "full_name")
+    if (!candidate.full_name) {
+      candidate.full_name = candidate.name || values[0];
+    }
+    
+    // Ensure email is set
+    if (!candidate.email) {
+      candidate.email = values[headerMap['email']] || values[1];
+    }
 
     if (candidate.full_name && candidate.email) {
-      result.push(candidate);
+      candidates.push(candidate as BulkCandidate);
     }
   }
 
-  return result;
+  return { 
+    headers: originalHeaders, 
+    candidates 
+  };
 }
 
 export function generateSampleCSV(): string {
-  return "Name, Email, Phone, Linkedin, Experience, Location, Education\nJohn Doe, john@example.com, +1234567890, https://linkedin.com/in/johndoe, 5 years, New York, B.Tech CS";
+  return "Name, Email, Phone, Location, Experience, Education\nJohn Doe, john@example.com, +1234567890, New York, 5 years, B.Tech CS";
 }

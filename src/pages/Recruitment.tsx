@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Briefcase, Users, Plus, Loader2, Send, Star, Pencil,
-  Share2, ExternalLink, UserCheck, BarChart3, Crown, Sparkles, Bot, Zap, Layers, BrainCircuit
+  Share2, ExternalLink, UserCheck, BarChart3, Crown, Sparkles, Bot, Zap, Layers, BrainCircuit,
+  Mail, Phone
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -386,6 +387,22 @@ export default function Recruitment() {
                                           </Avatar>
                                           <div>
                                             <p className="font-bold text-sm text-foreground leading-none mb-1">{candidate.full_name}</p>
+                                            <div className="flex flex-col gap-0.5 mb-1">
+                                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                                                <Mail className="h-2.5 w-2.5 text-primary/60" />
+                                                <a href={`mailto:${candidate.email}`} className="truncate max-w-[140px] hover:text-primary transition-colors">
+                                                  {candidate.email}
+                                                </a>
+                                              </div>
+                                              {candidate.phone && (
+                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                                                  <Phone className="h-2.5 w-2.5 text-primary/60" />
+                                                  <a href={`tel:${candidate.phone}`} className="hover:text-primary transition-colors">
+                                                    {candidate.phone}
+                                                  </a>
+                                                </div>
+                                              )}
+                                            </div>
                                             <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
                                               <Send className="h-2.5 w-2.5" />
                                               {candidate.source || 'Direct'}
