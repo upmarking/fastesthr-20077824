@@ -30,6 +30,7 @@ import HelpDesk from '@/pages/HelpDesk';
 import Announcements from '@/pages/Announcements';
 import Reports from '@/pages/Reports';
 import Settings from '@/pages/Settings';
+import Tasks from '@/pages/Tasks';
 import OfferView from '@/pages/recruitment/OfferView';
 import Documents from '@/pages/Documents';
 import Billing from '@/pages/Billing';
@@ -165,6 +166,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={withLayout(<Onboarding />)} />
       <Route path="/exit-management" element={withLayout(<ExitManagement />)} />
       <Route path="/holidays" element={withLayout(<HolidayCalendar />)} />
+      <Route path="/tasks" element={withLayout(<Tasks />)} />
       <Route path="/senddesk" element={withLayout(<SendDesk />)} />
       <Route path="/id-card" element={withLayout(<VirtualIDCard />)} />
       <Route path="/billing" element={withLayout(<Billing />, 'company_admin')} />

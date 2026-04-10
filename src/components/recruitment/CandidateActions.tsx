@@ -194,71 +194,12 @@ export function CandidateActions({
 
       // Handle Automated Onboarding (Candidate -> Employee)
       if (newStage === 'hired') {
-        toast.info('Moving candidate to onboarding flow...');
-        
-        // 1. Fetch full candidate and job info
-        const [
-          { data: candidateInfo },
-          { data: jobInfo },
-          { data: recentOffer }
-        ] = await Promise.all([
-          supabase.from('candidates').select('*').eq('id', candidateId).single(),
-          supabase.from('jobs').select('department_id').eq('id', jobId).single(),
-          supabase.from('candidate_offers')
-            .select('joining_date')
-            .eq('candidate_id', candidateId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-        ]);
-
-        if (!candidateInfo) {
-          toast.error('Failed to fetch candidate details.');
-          return;
-        }
-
-        // 2. Check for existing employee to prevent duplicates
-        const { data: existingEmployee } = await supabase
-          .from('employees')
-          .select('id')
-          .eq('company_id', (job as any).company_id)
-          .eq('work_email', candidateInfo.email)
-          .maybeSingle();
-
-        if (existingEmployee) {
-          toast.info('Candidate already exists in Employees/Onboarding.');
-          return;
-        }
-
-        // 3. Map candidate name to first_name/last_name
-        const nameParts = (candidateInfo.full_name || '').split(' ');
-        const firstName = nameParts[0] || 'Unknown';
-        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '—';
-
-        // 4. Create employee record
-        const { error: insertError } = await supabase
-          .from('employees')
-          .insert({
-            company_id: (job as any).company_id,
-            first_name: firstName,
-            last_name: lastName,
-            work_email: candidateInfo.email,
-            phone: candidateInfo.phone,
-            department_id: jobInfo?.department_id,
-            date_of_joining: recentOffer?.joining_date || new Date().toISOString().split('T')[0],
-            status: 'probation',
-            employment_type: (job as any).employment_type || 'full_time',
-          });
-
-        if (insertError) {
-          console.error('Error creating employee:', insertError);
-          toast.error('Failed to create onboarding record: ' + insertError.message);
-        } else {
-          toast.success('Successfully added to Onboarding!');
-          queryClient.invalidateQueries({ queryKey: ['new-hires'] });
-          queryClient.invalidateQueries({ queryKey: ['employees'] });
-        }
+        // The insertion is now handled by the database trigger 'on_candidate_hired'
+        // We just invalidate queries to refresh the Onboarding page data if it's open
+        queryClient.invalidateQueries({ queryKey: ['new-hires'] });
+        queryClient.invalidateQueries({ queryKey: ['employees'] });
       }
+
     } catch (err) {
       console.error('Automation error:', err);
     }
@@ -275,7 +216,9 @@ export function CandidateActions({
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['candidates', jobId] });
-      toast.success(`Candidate moved to ${variables}`);
+      toast.success(variables === 'hired' 
+        ? 'This user has been hired successfully and joined in the company'
+        : `Candidate moved to ${variables}`);
       if (variables !== 'offer') {
         executeAutomations(variables);
       }

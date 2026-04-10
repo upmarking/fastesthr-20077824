@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
   Star, Clock, ChevronDown, LayoutList, Columns, Loader2,
@@ -58,6 +59,29 @@ export function RecruitmentLeadsBoard() {
   const isAdmin = ['company_admin', 'super_admin'].includes(profile?.platform_role || '');
   const isManager = profile?.platform_role === 'hr_manager';
   const canFilter = isAdmin || isManager;
+  const queryClient = useQueryClient();
+
+  const updateStageMutation = useMutation({
+    mutationFn: async ({ candidateId, newStage }: { candidateId: string, newStage: string }) => {
+      const { error } = await supabase
+        .from('candidates')
+        .update({ stage: newStage as any })
+        .eq('id', candidateId);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['leads-board'] });
+      queryClient.invalidateQueries({ queryKey: ['new-hires'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      
+      toast.success(variables.newStage === 'hired' 
+        ? 'This user has been hired successfully and joined in the company'
+        : `Candidate moved to ${variables.newStage}`);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || 'Failed to update stage');
+    }
+  });
 
   // Fetch recruiters for filter
   const { data: recruiters = [] } = useQuery({
@@ -371,9 +395,22 @@ export function RecruitmentLeadsBoard() {
 
                   {/* Stage */}
                   <div className="col-span-2">
-                    <Badge className={`text-[10px] capitalize ${STAGE_COLORS[lead.stage] || 'bg-muted/50 text-muted-foreground'}`}>
-                      {lead.stage}
-                    </Badge>
+                    <Select
+                      value={lead.stage}
+                      onValueChange={(newStage) => updateStageMutation.mutate({ candidateId: lead.id, newStage })}
+                      disabled={updateStageMutation.isPending}
+                    >
+                      <SelectTrigger className={`h-7 w-fit text-[10px] capitalize border-none shadow-none focus:ring-0 px-2 ${STAGE_COLORS[lead.stage] || 'bg-muted/50 text-muted-foreground'}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALL_STAGES.map((s) => (
+                          <SelectItem key={s} value={s} className="capitalize text-[10px]">
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Assigned To */}
@@ -494,6 +531,23 @@ export function RecruitmentLeadsBoard() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
+                          <Select
+                            value={lead.stage}
+                            onValueChange={(newStage) => updateStageMutation.mutate({ candidateId: lead.id, newStage })}
+                            disabled={updateStageMutation.isPending}
+                          >
+                            <SelectTrigger className={`h-5 w-fit text-[9px] capitalize border-none shadow-none focus:ring-0 px-1.5 ${STAGE_COLORS[lead.stage] || 'bg-muted/50 text-muted-foreground'}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ALL_STAGES.map((s) => (
+                                <SelectItem key={s} value={s} className="capitalize text-[9px]">
+                                  {s}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
                           {lead.assigned_profile ? (
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <UserCheck className="h-3 w-3" />

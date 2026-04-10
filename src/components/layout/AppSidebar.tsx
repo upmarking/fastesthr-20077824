@@ -44,6 +44,7 @@ const fastBoardNav: NavItem[] = [
   { title: 'Documents', url: '/documents', icon: FileText, roles: ALL_ROLES },
   { title: 'Learning', url: '/learning', icon: GraduationCap, roles: ALL_ROLES },
   { title: 'Virtual ID Card', url: '/id-card', icon: Contact, roles: ALL_ROLES },
+  { title: 'Tasks', url: '/tasks', icon: CalendarCheck, roles: ALL_ROLES },
 ];
 
 const managementNav: NavItem[] = [
