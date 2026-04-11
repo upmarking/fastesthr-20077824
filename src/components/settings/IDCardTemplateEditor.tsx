@@ -75,7 +75,7 @@ export function IDCardTemplateEditor() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), val);
+      html = html.replace(new RegExp(key, 'g'), () => val);
     });
 
     return html;
