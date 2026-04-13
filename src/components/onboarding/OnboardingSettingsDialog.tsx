@@ -276,6 +276,7 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                 size="icon"
                                 className="h-8 w-8"
                                 onClick={() => setStepForm(prev => ({ ...prev, icon_name: opt.name }))}
+                                aria-label={`Select icon ${opt.name}`}
                             >
                                 <opt.icon className="h-4 w-4" />
                             </Button>
@@ -313,10 +314,10 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                             <p className="text-[10px] text-muted-foreground truncate">{step.description}</p>
                           </div>
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-primary" onClick={() => handleEdit(step)}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-primary" onClick={() => handleEdit(step)} aria-label="Edit step">
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive group-hover:bg-destructive/10" onClick={() => deleteStepMutation.mutate(step.id)}>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive group-hover:bg-destructive/10" onClick={() => deleteStepMutation.mutate(step.id)} aria-label="Delete step">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
