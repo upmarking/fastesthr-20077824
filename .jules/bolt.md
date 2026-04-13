@@ -5,3 +5,7 @@
 ## 2026-03-29 - Use Metadata Wrappers for List Filtering Optimization
 **Learning:** Directly augmenting or cloning source data objects (e.g., `employees.map(e => ({ ...e, _searchStr }))`) to optimize list filtering breaks referential integrity. This can cause unnecessary re-renders in child components and break logic relying on object identity (e.g., selection state).
 **Action:** When optimizing list filtering with `useMemo`, use a metadata wrapper pattern: `list.map(item => ({ item, precalculatedField }))`. Perform the filter on the metadata and then map back to the original `item` references. This preserves identity while still eliminating redundant allocations and operations during filtering.
+
+## 2024-04-14 - Debounce Dynamic Search API Queries
+**Learning:** Passing raw search input state directly to `useQuery` query keys triggers a new Supabase network request on every single keystroke. This causes excessive API calls, redundant database querying, and visual flashing as loading states re-trigger unnecessarily.
+**Action:** Always debounce text inputs that are directly coupled to network requests. Implement and use a `useDebounce` hook to delay the state update that triggers the React Query re-fetch until the user pauses typing (e.g., 300ms delay).
