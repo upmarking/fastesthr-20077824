@@ -11,6 +11,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Eye, Code, Save, Info, Sparkles } from 'lucide-react';
 
+const escapeHtml = (unsafe: string) => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 export function IDCardTemplateEditor() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
@@ -75,7 +84,7 @@ export function IDCardTemplateEditor() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), val);
+      html = html.replace(new RegExp(key, 'g'), escapeHtml(val));
     });
 
     return html;
