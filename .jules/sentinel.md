@@ -2,3 +2,8 @@
 **Vulnerability:** XSS/HTML Injection vulnerability in `src/lib/pdf-generator.ts` where unescaped user inputs (e.g., candidate names, custom template variables) were directly substituted into HTML strings before being rendered to PDF and persisted.
 **Learning:** The PDF generator natively executes `<script>` tags found in templates for features like CTC calculations before capturing `.innerHTML`. Using robust sanitizers like DOMPurify on the full template would strip these required scripts and break the feature.
 **Prevention:** Rather than sanitizing the entire compiled template block or pulling in heavy dependencies, escape individual variable values (e.g., `&`, `<`, `>`, `"`, `'`) specifically during variable substitution. This ensures user input is safe while preserving the template's intentional functional elements.
+
+## 2024-04-16 - Unauthenticated Credential Exposure in AI Interviewer
+**Vulnerability:** The `ai-interviewer` Edge Function returned the `GEMINI_API_KEY` (required for direct client-side WebSocket connections for Gemini Live) without checking any authentication or authorization, allowing anyone to obtain the key or perform analysis requests.
+**Learning:** When using Edge Functions with the `SUPABASE_SERVICE_ROLE_KEY`, they bypass Row Level Security. Returning sensitive secrets to the client requires manual validation of the requester's context (e.g., verifying a public hash link or parsing the JWT from the `Authorization` header).
+**Prevention:** Always validate authorization before processing actions in Edge Functions, especially when returning credentials. Verify public links against the database (checking expiration and status) or validate the `Authorization` header using `supabaseClient.auth.getUser()`.
