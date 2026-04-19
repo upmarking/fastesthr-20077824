@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 import { useParams, Link } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { ArrowLeft, Clock, Zap, Share2, Bookmark } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 import { BLOGS, BlogPost as BlogPostType } from '@/data/blogs';
 
@@ -21,7 +22,6 @@ const BlogPost = () => {
   useEffect(() => {
     const post = BLOGS.find(b => b.slug === slug);
     if (post) {
-      document.title = `${post.title} | FastestHR`;
       setBlogData(post);
     }
     window.scrollTo(0,0);
@@ -31,6 +31,16 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-zinc-50 font-sans selection:bg-cyan-500/30">
+      <SEO 
+        title={blogData.title}
+        description={blogData.excerpt}
+        image={blogData.image}
+        article={true}
+        author={blogData.author}
+        date={blogData.date}
+        category={blogData.category}
+        type="article"
+      />
       
       {/* Scroll Progress Bar */}
       <motion.div 
