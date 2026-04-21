@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, MapPin, Users, Globe, Linkedin, Building2, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { getCompanySlugFromHost } from '@/utils/tenantUtils';
+import { isSafeUrl } from '@/lib/utils';
 
 const HERO_GRADIENT = 'linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%)';
 
@@ -159,13 +160,13 @@ export default function CompanyPage() {
 
           {/* Links */}
           <div className="flex items-center justify-center gap-4">
-            {(company as any).website && (
+            {(company as any).website && isSafeUrl((company as any).website) && (
               <a href={(company as any).website} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors">
                 <Globe className="h-4 w-4" /> Website
               </a>
             )}
-            {(company as any).linkedin_url && (
+            {(company as any).linkedin_url && isSafeUrl((company as any).linkedin_url) && (
               <a href={(company as any).linkedin_url} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors">
                 <Linkedin className="h-4 w-4" /> LinkedIn

@@ -1,8 +1,4 @@
-## 2024-03-24 - HTML Injection in PDF Templates
-**Vulnerability:** XSS/HTML Injection vulnerability in `src/lib/pdf-generator.ts` where unescaped user inputs (e.g., candidate names, custom template variables) were directly substituted into HTML strings before being rendered to PDF and persisted.
-**Learning:** The PDF generator natively executes `<script>` tags found in templates for features like CTC calculations before capturing `.innerHTML`. Using robust sanitizers like DOMPurify on the full template would strip these required scripts and break the feature.
-**Prevention:** Rather than sanitizing the entire compiled template block or pulling in heavy dependencies, escape individual variable values (e.g., `&`, `<`, `>`, `"`, `'`) specifically during variable substitution. This ensures user input is safe while preserving the template's intentional functional elements.
-## 2024-05-18 - [Fix Stored XSS and Regex Backref in ID Card Templates]
-**Vulnerability:** ID card templates containing HTML and `<style>` blocks (authored by potentially malicious company admins) were rendered directly via `dangerouslySetInnerHTML` in three components without sanitization, leading to Stored XSS. Also, template variable replacement used string replacements `html.replace(regex, val)`, which suffers from regex backreference attacks if `val` contains tokens like `$&`.
-**Learning:** Tenant-customizable templates must be sanitized before rendering. Using `dangerouslySetInnerHTML` without `dompurify` is dangerous, even for internal users. Furthermore, string-based regex replacement fails securely on malicious strings with regex tokens.
-**Prevention:** Always wrap `dangerouslySetInnerHTML` content with `DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true })` if style tags are needed. Always use the callback form for replace `replace(regex, () => val)` to treat replacement values as literal strings.
+## 2023-10-27 - Fix XSS Vulnerability in External Links
+**Vulnerability:** User-supplied URLs rendered directly in `href` attributes without protocol validation could lead to Cross-Site Scripting (XSS) if they contain `javascript:` URIs.
+**Learning:** Found instances where meeting links (`interview.meeting_link`) and company external links (`website`, `linkedin_url`) were directly injected into `<a>` tags.
+**Prevention:** Always validate external URLs to ensure they start with safe protocols (`http://` or `https://`) before rendering them in `href` attributes using a centralized utility function like `isSafeUrl`.
