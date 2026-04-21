@@ -70,31 +70,31 @@ export function RecruitmentTeam() {
 
       if (!members) return [];
 
-      // For each recruiter, get their manager name
-      const enriched = await Promise.all(
-        (members || []).map(async (m: any) => {
-          let managerName: string | undefined;
-          if (m.manager_id) {
-            const { data: mgr } = await (supabase as any)
-              .from('profiles')
-              .select('full_name')
-              .eq('id', m.manager_id)
-              .single();
-            managerName = mgr?.full_name;
-          }
+      // ⚡ Bolt: Batch fetch managers to avoid N+1 queries while retaining fast DB-level counts
+      const managerIds = [...new Set(members.map((m: any) => m.manager_id).filter(Boolean))];
 
-          // Count active leads
-          const { count } = await (supabase as any)
+      const [managersRes, ...countsRes] = await Promise.all([
+        managerIds.length > 0
+          ? (supabase as any).from('profiles').select('id, full_name').in('id', managerIds)
+          : Promise.resolve({ data: [] }),
+        ...members.map((m: any) =>
+          (supabase as any)
             .from('candidates')
             .select('*', { count: 'exact', head: true })
             .eq('assigned_to', m.id)
-            .neq('stage', 'rejected');
+            .neq('stage', 'rejected')
+        )
+      ]);
 
-          return { ...m, managerName, activeLeads: count || 0 } as TeamMember;
-        })
+      const managerMap = new Map(
+        (managersRes.data || []).map((m: any) => [m.id, m.full_name])
       );
 
-      return enriched;
+      return members.map((m: any, index: number) => ({
+        ...m,
+        managerName: m.manager_id ? managerMap.get(m.manager_id) : undefined,
+        activeLeads: countsRes[index].count || 0
+      })) as TeamMember[];
     },
     enabled: !!profile?.company_id,
   });
