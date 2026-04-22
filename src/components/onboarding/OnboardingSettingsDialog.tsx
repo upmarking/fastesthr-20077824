@@ -305,6 +305,7 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                     variant={stepForm.icon_name === opt.name ? 'default' : 'outline'} 
                                     size="icon" className="h-8 w-8"
                                     onClick={() => setStepForm(p=>({...p, icon_name: opt.name}))}
+                                    aria-label={`Select icon ${opt.name}`}
                                 >
                                     <opt.icon className="h-4 w-4" />
                                 </Button>
@@ -340,8 +341,8 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                     setEditingStepId(step.id);
                                     setStepForm({ title: step.title, description: step.description || '', icon_name: step.icon_name || 'ClipboardList' });
                                     setIsAddingStep(true);
-                                }}><Edit2 className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteStepMutation.mutate(step.id)}><Trash2 className="h-4 w-4" /></Button>
+                                }} aria-label="Edit step"><Edit2 className="h-4 w-4" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteStepMutation.mutate(step.id)} aria-label="Delete step"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                         </div>
                     );
@@ -425,8 +426,8 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                     setEditingDocId(doc.id);
                                     setDocForm({ title: doc.title, description: doc.description || '', type: doc.type, is_mandatory: doc.is_mandatory });
                                     setIsAddingDoc(true);
-                                }}><Edit2 className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteDocMutation.mutate(doc.id)}><Trash2 className="h-4 w-4" /></Button>
+                                }} aria-label="Edit document"><Edit2 className="h-4 w-4" /></Button>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteDocMutation.mutate(doc.id)} aria-label="Delete document"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                         </div>
                     ))
