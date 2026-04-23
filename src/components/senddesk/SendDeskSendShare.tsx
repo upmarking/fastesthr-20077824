@@ -107,19 +107,33 @@ export function SendDeskSendShare() {
     enabled: !!profile?.company_id,
   });
 
+  // ⚡ Bolt: Implemented metadata wrapper pattern for list filtering
+  // to avoid redundant toLowerCase allocations on every search keystroke,
+  // preserving referential integrity.
+  const searchableEmailMetadata = useMemo(() => {
+    return emails.map(e => ({
+      emailRecord: e,
+      recipientEmailLower: e.recipient_email.toLowerCase(),
+      recipientNameLower: (e.recipient_name || '').toLowerCase(),
+      subjectLower: e.subject.toLowerCase()
+    }));
+  }, [emails]);
+
   const filteredEmails = useMemo(() => {
-    let filtered = emails;
-    if (statusFilter) filtered = filtered.filter(e => e.status === statusFilter);
+    let metadataList = searchableEmailMetadata;
+    if (statusFilter) {
+      metadataList = metadataList.filter(m => m.emailRecord.status === statusFilter);
+    }
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
-      filtered = filtered.filter(e =>
-        e.recipient_email.toLowerCase().includes(s) ||
-        e.recipient_name?.toLowerCase().includes(s) ||
-        e.subject.toLowerCase().includes(s)
+      metadataList = metadataList.filter(m =>
+        m.recipientEmailLower.includes(s) ||
+        m.recipientNameLower.includes(s) ||
+        m.subjectLower.includes(s)
       );
     }
-    return filtered;
-  }, [emails, searchTerm, statusFilter]);
+    return metadataList.map(m => m.emailRecord);
+  }, [searchableEmailMetadata, searchTerm, statusFilter]);
 
   const generatedDocs = documents.filter(d => d.status === 'generated' || d.status === 'sent');
 
