@@ -119,71 +119,53 @@ function CompanyAdminDashboard() {
   const attritionCount = employeeData?.attritionCount || 0;
   const celebrations = employeeData?.celebrations || { birthdays: [], anniversaries: [] };
 
-  const { data: leaveRequests = [], isLoading: loadingLeave } = useQuery({
-    queryKey: ['pending-leaves', profile?.company_id],
+  const { data: dashboardMetrics, isLoading: loadingMetrics } = useQuery({
+    queryKey: ['dashboard-metrics', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('leave_requests')
-        .select('*, employees!leave_requests_employee_id_fkey(first_name, last_name)')
-        .eq('company_id', profile!.company_id!)
-        .eq('status', 'pending')
-        .limit(5);
-      return data || [];
-    },
-    enabled: !!profile?.company_id,
-  });
+      const [
+        leaveRes,
+        jobsRes,
+        announcementsRes,
+        payrollRes,
+        candidatesRes
+      ] = await Promise.all([
+        supabase
+          .from('leave_requests')
+          .select('*, employees!leave_requests_employee_id_fkey(first_name, last_name)')
+          .eq('company_id', profile!.company_id!)
+          .eq('status', 'pending')
+          .limit(5),
+        supabase
+          .from('jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', profile!.company_id!)
+          .eq('status', 'open'),
+        supabase
+          .from('announcements')
+          .select('*')
+          .eq('company_id', profile!.company_id!)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('payroll_runs')
+          .select('total_gross, total_net, total_deductions, period_end')
+          .eq('company_id', profile!.company_id!)
+          .order('period_end', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('candidates')
+          .select('id, full_name, ai_interview_result')
+          .eq('company_id', profile!.company_id!)
+          .not('ai_interview_result', 'is', null)
+      ]);
 
-  const { data: openJobs = 0 } = useQuery({
-    queryKey: ['open-jobs', profile?.company_id],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from('jobs')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', profile!.company_id!)
-        .eq('status', 'open');
-      return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
+      const leaveRequests = leaveRes.data || [];
+      const openJobs = jobsRes.count || 0;
+      const announcements = announcementsRes.data || [];
+      const payrollSummary = payrollRes.data;
 
-  const { data: announcements = [] } = useQuery({
-    queryKey: ['recent-announcements', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('company_id', profile!.company_id!)
-        .order('created_at', { ascending: false })
-        .limit(3);
-      return data || [];
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  const { data: payrollSummary } = useQuery({
-    queryKey: ['payroll-summary', profile?.company_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('payroll_runs')
-        .select('total_gross, total_net, total_deductions, period_end')
-        .eq('company_id', profile!.company_id!)
-        .order('period_end', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!profile?.company_id,
-  });
-
-  const { data: aiRecruitmentStats, isLoading: loadingAI } = useQuery({
-    queryKey: ['ai-recruitment-stats', profile?.company_id],
-    queryFn: async () => {
-      const { data: candidates } = await supabase
-        .from('candidates')
-        .select('id, full_name, ai_interview_result')
-        .eq('company_id', profile!.company_id!)
-        .not('ai_interview_result', 'is', null);
-
+      const candidates = candidatesRes.data;
       const interviewedCount = candidates?.length || 0;
       const avgScore = interviewedCount > 0 
         ? (candidates!.reduce((acc, curr) => acc + (curr.ai_interview_result?.ai_score || 0), 0) / interviewedCount).toFixed(1)
@@ -192,11 +174,20 @@ function CompanyAdminDashboard() {
       const topCandidates = [...(candidates || [])]
         .sort((a, b) => (b.ai_interview_result?.ai_score || 0) - (a.ai_interview_result?.ai_score || 0))
         .slice(0, 3);
+      const aiRecruitmentStats = { interviewedCount, avgScore, topCandidates };
 
-      return { interviewedCount, avgScore, topCandidates };
+      return { leaveRequests, openJobs, announcements, payrollSummary, aiRecruitmentStats };
     },
     enabled: !!profile?.company_id,
   });
+
+  const leaveRequests = dashboardMetrics?.leaveRequests || [];
+  const loadingLeave = loadingMetrics;
+  const openJobs = dashboardMetrics?.openJobs || 0;
+  const announcements = dashboardMetrics?.announcements || [];
+  const payrollSummary = dashboardMetrics?.payrollSummary;
+  const aiRecruitmentStats = dashboardMetrics?.aiRecruitmentStats;
+  const loadingAI = loadingMetrics;
 
   const attritionRate = employeeCount > 0 ? (attritionCount / (employeeCount + attritionCount) * 100).toFixed(1) : '0.0';
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -691,23 +682,23 @@ function HRManagerDashboard() {
   const employeeCount = employeeData?.employeeCount || 0;
   const birthdays = employeeData?.birthdays || [];
 
-  const { data: pendingLeaves = [] } = useQuery({
-    queryKey: ['pending-leaves', profile?.company_id],
+  const { data: hrMetrics } = useQuery({
+    queryKey: ['hr-metrics', profile?.company_id],
     queryFn: async () => {
-      const { data } = await supabase.from('leave_requests').select('*, employees!leave_requests_employee_id_fkey(first_name, last_name)').eq('company_id', profile!.company_id!).eq('status', 'pending').limit(5);
-      return data || [];
+      const [leavesRes, ticketsRes] = await Promise.all([
+        supabase.from('leave_requests').select('*, employees!leave_requests_employee_id_fkey(first_name, last_name)').eq('company_id', profile!.company_id!).eq('status', 'pending').limit(5),
+        supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).in('status', ['open', 'in_progress'])
+      ]);
+      return {
+        pendingLeaves: leavesRes.data || [],
+        openTickets: ticketsRes.count || 0
+      };
     },
     enabled: !!profile?.company_id,
   });
 
-  const { data: openTickets = 0 } = useQuery({
-    queryKey: ['open-tickets', profile?.company_id],
-    queryFn: async () => {
-      const { count } = await supabase.from('tickets').select('*', { count: 'exact', head: true }).eq('company_id', profile!.company_id!).in('status', ['open', 'in_progress']);
-      return count || 0;
-    },
-    enabled: !!profile?.company_id,
-  });
+  const pendingLeaves = hrMetrics?.pendingLeaves || [];
+  const openTickets = hrMetrics?.openTickets || 0;
 
   return (
     <div className="space-y-6">
