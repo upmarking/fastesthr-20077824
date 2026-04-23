@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/use-debounce';
 import { toast } from 'sonner';
 
 interface TicketForm {
@@ -27,6 +28,11 @@ export default function HelpDesk() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+
+  // ⚡ Bolt: Debounce search input to prevent excessive API calls
+  // and database queries while the user is typing
+  const debouncedSearch = useDebounce(search, 300);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<TicketForm>(emptyForm);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
@@ -42,7 +48,7 @@ export default function HelpDesk() {
   });
 
   const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ['tickets', search, profile?.company_id],
+    queryKey: ['tickets', debouncedSearch, profile?.company_id],
     queryFn: async () => {
       let query = supabase
         .from('tickets')
@@ -50,8 +56,8 @@ export default function HelpDesk() {
         .eq('company_id', profile!.company_id!)
         .order('created_at', { ascending: false })
         .limit(50);
-      if (search) {
-        query = query.or(`subject.ilike.%${search}%,ticket_number.ilike.%${search}%`);
+      if (debouncedSearch) {
+        query = query.or(`subject.ilike.%${debouncedSearch}%,ticket_number.ilike.%${debouncedSearch}%`);
       }
       const { data } = await query;
       return data || [];
