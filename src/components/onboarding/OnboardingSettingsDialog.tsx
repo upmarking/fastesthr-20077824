@@ -303,7 +303,7 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                 <Button 
                                     key={opt.name} 
                                     variant={stepForm.icon_name === opt.name ? 'default' : 'outline'} 
-                                    size="icon" className="h-8 w-8"
+                                    size="icon" aria-label={`Select ${opt.name} icon`} className="h-8 w-8"
                                     onClick={() => setStepForm(p=>({...p, icon_name: opt.name}))}
                                 >
                                     <opt.icon className="h-4 w-4" />
@@ -336,12 +336,12 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                 <p className="text-[10px] text-muted-foreground truncate">{step.description}</p>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+                                <Button size="icon" aria-label="Edit step" variant="ghost" className="h-8 w-8" onClick={() => {
                                     setEditingStepId(step.id);
                                     setStepForm({ title: step.title, description: step.description || '', icon_name: step.icon_name || 'ClipboardList' });
                                     setIsAddingStep(true);
                                 }}><Edit2 className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteStepMutation.mutate(step.id)}><Trash2 className="h-4 w-4" /></Button>
+                                <Button size="icon" aria-label="Delete step" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteStepMutation.mutate(step.id)}><Trash2 className="h-4 w-4" /></Button>
                             </div>
                         </div>
                     );
@@ -421,12 +421,12 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                 <p className="text-[10px] text-muted-foreground truncate">{doc.description}</p>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {
+                                <Button size="icon" aria-label="Edit document requirement" variant="ghost" className="h-8 w-8" onClick={() => {
                                     setEditingDocId(doc.id);
                                     setDocForm({ title: doc.title, description: doc.description || '', type: doc.type, is_mandatory: doc.is_mandatory });
                                     setIsAddingDoc(true);
                                 }}><Edit2 className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteDocMutation.mutate(doc.id)}><Trash2 className="h-4 w-4" /></Button>
+                                <Button size="icon" aria-label="Delete document requirement" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => deleteDocMutation.mutate(doc.id)}><Trash2 className="h-4 w-4" /></Button>
                             </div>
                         </div>
                     ))
