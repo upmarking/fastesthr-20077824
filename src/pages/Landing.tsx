@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown, Cpu, Shield, Zap, LayoutDashboard, Fingerprint, Layers, Activity, Users, DollarSign } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 const Landing = () => {
   const { scrollYProgress } = useScroll();
@@ -13,7 +14,6 @@ const Landing = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    document.title = "FastestHR | Next-Gen Workforce OS";
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
@@ -33,6 +33,17 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-50 overflow-hidden font-sans selection:bg-cyan-500/30">
+      <SEO 
+        title="Fastest HR | Next-Gen Fast HRMS"
+        description="Ranked #1 for velocity: The fastest HR Operating System for hyper-growth teams. Experience a high-performance HRMS engineered for scaling enterprises."
+        keywords="Fastest HR, Fast HRMS, HR Operating System, Workforce OS, Enterprise HRMS"
+        type="software"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Platform', path: '/' }
+        ]}
+        faqs={faqs}
+      />
       
       {/* Interactive Cursor Glow */}
       <div 
@@ -87,12 +98,12 @@ const Landing = () => {
               variants={fadeIn}
               className="mt-6 font-extrabold text-transparent text-6xl sm:text-7xl lg:text-8xl tracking-tighter bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600 pb-4 leading-[1.1]"
             >
-              The Operating System <br className="hidden sm:block" />
+              The <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">Fastest HR</span> Operating System <br className="hidden sm:block" />
               for Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-500 animate-gradient-x">Workforce.</span>
             </motion.h1>
 
             <motion.p variants={fadeIn} className="mt-8 text-xl sm:text-2xl font-light text-zinc-400 max-w-3xl leading-relaxed">
-              Ditch the archaic legacy tools. Experience a hyper-optimized, brutally efficient HR platform engineered for modern, scaling enterprises.
+              Ditch the archaic legacy tools. Experience the world's <span className="text-zinc-100 font-medium">Fastest HRMS</span>—a hyper-optimized, brutally efficient platform purpose-built for modern, scaling enterprises.
             </motion.p>
 
             <motion.div variants={fadeIn} className="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
@@ -240,8 +251,8 @@ const Landing = () => {
       <section className="relative z-10 py-32 bg-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="mb-20 text-center md:text-left">
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tighter leading-tight"><span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-500 to-zinc-700">Architected for</span> <br className="hidden md:block" />Infinite Velocity.</h2>
-            <p className="mt-6 text-xl text-zinc-400 font-light max-w-2xl">Precision instruments designed to eliminate friction in every HR process, built for scale.</p>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tighter leading-tight"><span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-500 to-zinc-700">High-Performance</span> <br className="hidden md:block" />Fast HRMS Protocols.</h2>
+            <p className="mt-6 text-xl text-zinc-400 font-light max-w-2xl">Precision instruments designed to eliminate friction. Our <span className="text-zinc-200">Fastest HR</span> protocol ensures sub-millisecond data synchronization across your entire global workforce.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,6 +303,38 @@ const Landing = () => {
               <FAQItem key={idx} question={faq.question} answer={faq.answer} index={idx} />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ROI Calculator / SXO Tool */}
+      <ROICalculator />
+
+      {/* Internal Linking / Content Cluster Hub */}
+      <section className="relative z-10 py-32 bg-black overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-4xl font-extrabold tracking-tighter mb-12">Intelligence Log <span className="text-cyan-400">Featured.</span></h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Link to="/blog/neural-hr-ai-rewiring-talent-acquisition" className="group p-6 rounded-2xl bg-[#0a0a0a] border border-white/5 hover:border-cyan-500/20 transition-all text-left">
+              <span className="text-xs font-mono text-cyan-400 mb-2 block uppercase tracking-widest">Neural HR Protocol</span>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-white transition-colors">How AI Rewires Recruiting</h3>
+              <p className="text-sm text-zinc-500 line-clamp-2">Deep dive into our proprietary recruitment algorithms.</p>
+            </Link>
+            <Link to="/blog/zero-trust-payroll-securing-enterprise" className="group p-6 rounded-2xl bg-[#0a0a0a] border border-white/5 hover:border-indigo-500/20 transition-all text-left">
+              <span className="text-xs font-mono text-indigo-400 mb-2 block uppercase tracking-widest">Security Matrix</span>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-white transition-colors">Zero-Trust Payroll Logic</h3>
+              <p className="text-sm text-zinc-500 line-clamp-2">Securing enterprise financial flows at scale.</p>
+            </Link>
+            <Link to="/blog/real-time-performance-beyond-annual-review" className="group p-6 rounded-2xl bg-[#0a0a0a] border border-white/5 hover:border-violet-500/20 transition-all text-left">
+              <span className="text-xs font-mono text-violet-400 mb-2 block uppercase tracking-widest">Velocity Metrics</span>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-white transition-colors">Beyond Annual Reviews</h3>
+              <p className="text-sm text-zinc-500 line-clamp-2">Real-time performance distribution protocols.</p>
+            </Link>
+          </div>
+          <motion.div className="mt-12">
+            <Link to="/blog" className="text-sm font-bold text-zinc-400 hover:text-cyan-400 transition-colors inline-flex items-center gap-2">
+              Access Full Log Transmission <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -373,5 +416,77 @@ const faqs = [
   { question: "Can we integrate with our existing payroll software?", answer: "Absolutely. We offer native API webhooks that seamlessly feed attendance, leave, and compensation adjustments directly into systems like ADP, Gusto, and Workday without manual exports." },
   { question: "What is the uptime guarantee for the platform?", answer: "We provide an SLA-backed 99.99% multi-region uptime guarantee. Our edge network routing ensures lightning-fast performance globally, scaling instantly during high-traffic load events." }
 ];
+
+// ROI Calculator Component
+const ROICalculator = () => {
+  const [employees, setEmployees] = useState(100);
+  const hoursSavedPerEmployee = 4; // Monthly
+  const hourlyRate = 45;
+  
+  const monthlySavings = employees * hoursSavedPerEmployee * hourlyRate;
+  const yearlySavings = monthlySavings * 12;
+
+  return (
+    <section className="relative z-10 py-32 bg-[#050505] border-y border-white/5 overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(34,211,238,0.03)_0,transparent_50%)]"></div>
+      <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+        <div>
+          <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tighter mb-8 leading-tight">Quantify Your <br /><span className="text-cyan-400">HR Velocity.</span></h2>
+          <p className="text-xl text-zinc-400 font-light mb-12 leading-relaxed">Calculate the efficiency gains from migrating to the <span className="text-zinc-200">Fastest HR</span> protocol. Stop hemorrhaging time on legacy workflows.</p>
+          
+          <div className="space-y-8">
+            <div>
+              <div className="flex justify-between mb-4">
+                <span className="text-sm font-mono text-zinc-500 uppercase tracking-widest">Personnel Count</span>
+                <span className="text-sm font-bold text-cyan-400">{employees}</span>
+              </div>
+              <input 
+                type="range" 
+                min="10" 
+                max="5000" 
+                step="10"
+                value={employees}
+                onChange={(e) => setEmployees(parseInt(e.target.value))}
+                className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl bg-black border border-white/5">
+                <div className="text-xs text-zinc-500 uppercase mb-2">Hours Saved / Mo</div>
+                <div className="text-2xl font-bold font-mono text-indigo-400">{(employees * hoursSavedPerEmployee).toLocaleString()}</div>
+              </div>
+              <div className="p-6 rounded-2xl bg-black border border-white/5">
+                <div className="text-xs text-zinc-500 uppercase mb-2">Efficiency Gain</div>
+                <div className="text-2xl font-bold font-mono text-emerald-400">84.2%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="relative">
+          <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 blur-3xl rounded-full opacity-50"></div>
+          <div className="relative rounded-3xl bg-black border border-white/10 p-10 overflow-hidden shadow-2xl">
+            <div className="text-xs font-mono text-zinc-500 mb-8 uppercase tracking-widest">Projection: Annual Savings</div>
+            <div className="text-6xl sm:text-7xl font-extrabold tracking-tighter text-white mb-4 tabular-nums">
+              ${yearlySavings.toLocaleString()}
+            </div>
+            <div className="text-zinc-500 font-light">Projected capital preservation based on current HR velocity benchmarks.</div>
+            
+            <div className="mt-12 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+            <div className="mt-12 flex items-center justify-between">
+              <div className="flex gap-2">
+                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-cyan-400"><Cpu className="w-6 h-6" /></div>
+                <div className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-indigo-400"><Zap className="w-6 h-6" /></div>
+              </div>
+              <Link to="/register" className="text-sm font-bold text-white hover:text-cyan-400 transition-colors group flex items-center gap-2">
+                Deploy Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 export default Landing;
