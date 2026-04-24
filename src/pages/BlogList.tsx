@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Clock, Zap, Search } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 import { BLOGS } from '@/data/blogs';
 
@@ -10,7 +11,7 @@ const BlogList = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    document.title = "Insights & Intelligence | FastestHR";
+    // metadata handled by SEO component
   }, []);
 
   const filteredBlogs = BLOGS.filter(blog => 
@@ -20,6 +21,10 @@ const BlogList = () => {
 
   return (
     <div className="min-h-screen bg-black text-zinc-50 font-sans selection:bg-cyan-500/30">
+      <SEO 
+        title="Insights & Intelligence"
+        description="The Intelligence Log: Advanced discourse on human resources, emerging technologies, and elite leadership protocols."
+      />
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">

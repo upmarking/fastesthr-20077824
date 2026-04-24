@@ -196,6 +196,7 @@ export function RolePermissions({ roleId, companyId }: RolePermissionsProps) {
                     <Checkbox 
                       checked={areAllInColumnChecked(col.key)}
                       onCheckedChange={(checked) => handleToggleColumn(col.key, checked as boolean)}
+                      aria-label={`Select all ${col.title} permissions`}
                       className="h-4 w-4 border-muted-foreground/30 data-[state=checked]:bg-primary"
                     />
                   </div>
@@ -215,6 +216,7 @@ export function RolePermissions({ roleId, companyId }: RolePermissionsProps) {
                     <Checkbox 
                         checked={isAllChecked}
                         onCheckedChange={(checked) => handleToggleRow(module, checked as boolean)}
+                        aria-label={`Select all permissions for ${module}`}
                         className="opacity-50 hover:opacity-100"
                         title={`Select all for ${module}`}
                       />
@@ -224,6 +226,7 @@ export function RolePermissions({ roleId, companyId }: RolePermissionsProps) {
                       <Checkbox 
                         checked={rowPerms[col.key] || false}
                         onCheckedChange={(checked) => handleToggle(module, col.key, checked as boolean)}
+                        aria-label={`Toggle ${col.title} permission for ${module}`}
                         className="mx-auto"
                       />
                     </td>
