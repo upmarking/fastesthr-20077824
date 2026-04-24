@@ -224,10 +224,10 @@ export default function DomainSettings() {
                     .{BASE_DOMAIN}
                   </div>
                 </div>
-                <Button variant="default" size="icon" className="h-10 w-10 shrink-0" onClick={handleSaveSlug} disabled={!slugAvailable || updateSlug.isPending || checkingSlug} aria-label="Save slug">
+                <Button variant="default" size="icon" className="h-10 w-10 shrink-0" onClick={handleSaveSlug} disabled={!slugAvailable || updateSlug.isPending || checkingSlug} aria-label="Save workspace URL">
                   {updateSlug.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setEditingSlug(false)} aria-label="Cancel editing slug">
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setEditingSlug(false)} aria-label="Cancel editing workspace URL">
                   <X className="w-4 h-4" />
                 </Button>
               </div>
