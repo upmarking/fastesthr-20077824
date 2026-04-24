@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Clock, CalendarDays, DollarSign, BarChart3,
@@ -72,20 +73,6 @@ const superAdminNav = [
   { title: 'System', url: '/admin/system', icon: Server },
 ];
 
-function buildRoleMap(navItems: NavItem[]): Record<Role, NavItem[]> {
-  const map = {} as Record<Role, NavItem[]>;
-  for (const item of navItems) {
-    for (const role of item.roles) {
-      if (!map[role]) map[role] = [];
-      map[role].push(item);
-    }
-  }
-  return map;
-}
-
-const fastBoardNavMap = buildRoleMap(fastBoardNav);
-const managementNavMap = buildRoleMap(managementNav);
-const accountNavMap = buildRoleMap(accountNav);
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -110,9 +97,9 @@ export function AppSidebar() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const filteredFastBoard = isSuperAdmin ? fastBoardNav : (fastBoardNavMap[userRole] || []);
-  const filteredManagement = isSuperAdmin ? managementNav : (managementNavMap[userRole] || []);
-  const filteredAccount = isSuperAdmin ? accountNav : (accountNavMap[userRole] || []);
+  const filteredFastBoard = useMemo(() => isSuperAdmin ? fastBoardNav : fastBoardNav.filter(item => item.roles.includes(userRole)), [isSuperAdmin, userRole]);
+  const filteredManagement = useMemo(() => isSuperAdmin ? managementNav : managementNav.filter(item => item.roles.includes(userRole)), [isSuperAdmin, userRole]);
+  const filteredAccount = useMemo(() => isSuperAdmin ? accountNav : accountNav.filter(item => item.roles.includes(userRole)), [isSuperAdmin, userRole]);
 
   const isActive = (url: string) => {
     if (url === '/dashboard') return location.pathname === '/dashboard';
