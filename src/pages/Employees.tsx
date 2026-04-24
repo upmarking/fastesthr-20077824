@@ -35,6 +35,10 @@ export default function Employees() {
   const debouncedSearch = useDebounce(search, 300);
   const [view, setView] = useState<'grid' | 'list' | 'org'>('grid');
 
+  // ⚡ Bolt: Debounce search input to prevent excessive API calls
+  // and database queries while the user is typing
+  const debouncedSearch = useDebounce(search, 300);
+
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', debouncedSearch, profile?.company_id],
     queryFn: async () => {
