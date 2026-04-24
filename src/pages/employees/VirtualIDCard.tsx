@@ -13,15 +13,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { escapeHtml } from '@/lib/utils';
 
-const escapeHtml = (unsafe: string) => {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-};
-
 export default function VirtualIDCard() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
@@ -137,7 +128,7 @@ export default function VirtualIDCard() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(val));
+      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(String(val)));
     });
 
     return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
