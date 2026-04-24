@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function escapeHtml(unsafe: string): string {
+  if (typeof unsafe !== 'string') return unsafe;
   return unsafe
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

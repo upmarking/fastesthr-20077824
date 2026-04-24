@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth-store';
 import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'dompurify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Download, Upload, Share2, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -130,7 +131,7 @@ export default function VirtualIDCard() {
       html = html.replace(new RegExp(key, 'g'), () => escapeHtml(String(val)));
     });
 
-    return html;
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
   };
 
   const eligibility = checkUploadEligibility();
