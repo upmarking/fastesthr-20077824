@@ -419,13 +419,13 @@ export default function Onboarding() {
                                                     <div className="flex items-center gap-2">
                                                         <Badge className="bg-success/10 text-success border-success/20">UPLOADED</Badge>
                                                         {req.type === 'file' ? (
-                                                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleDownload(submission)}>
+                                                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleDownload(submission)} aria-label="Download submission">
                                                                 <Download className="h-4 w-4" />
                                                               </Button>
                                                         ) : (
                                                             <Dialog>
                                                                 <DialogTrigger asChild>
-                                                                    <Button size="icon" variant="ghost" className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
+                                                                    <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="View text entry"><Eye className="h-4 w-4" /></Button>
                                                                 </DialogTrigger>
                                                                 <DialogContent>
                                                                     <DialogHeader>

@@ -23,7 +23,7 @@ export function DocumentRenderer({
     let content = htmlContent;
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-      content = content.replace(regex, value);
+      content = content.replace(regex, () => value);
     });
     // Sanitize the HTML to prevent XSS vulnerabilities while allowing custom styles
     return DOMPurify.sanitize(content, {
@@ -143,7 +143,7 @@ export function replaceDocVariables(html: string, variables: Record<string, stri
   let content = html;
   Object.entries(variables).forEach(([key, value]) => {
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-    content = content.replace(regex, value);
+    content = content.replace(regex, () => value);
   });
   return content;
 }
