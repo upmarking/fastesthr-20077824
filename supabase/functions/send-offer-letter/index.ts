@@ -7,7 +7,8 @@ import * as nodemailer from "npm:nodemailer@6.9.8";
 
 const allowedOrigins = [
   'https://fastesthr.com',
-  'http://localhost:8080'
+  'http://localhost:8080',
+  'https://*.fastesthr.com'
 ];
 
 const getCorsHeaders = (req: Request) => {

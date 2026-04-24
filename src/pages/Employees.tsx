@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/use-debounce';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
 import { OrgChartPro } from '@/components/employees/OrgChartPro';
 
@@ -28,10 +29,11 @@ export default function Employees() {
   const navigate = useNavigate();
   const { profile } = useAuthStore();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [view, setView] = useState<'grid' | 'list' | 'org'>('grid');
 
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['employees', search, profile?.company_id],
+    queryKey: ['employees', debouncedSearch, profile?.company_id],
     queryFn: async () => {
       let query = supabase
         .from('employees')
@@ -45,8 +47,8 @@ export default function Employees() {
         query = query.order('first_name');
       }
 
-      if (search) {
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,work_email.ilike.%${search}%`);
+      if (debouncedSearch) {
+        query = query.or(`first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%,work_email.ilike.%${debouncedSearch}%`);
       }
 
       const { data } = await query;
