@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -62,7 +62,6 @@ const CandidateLogin = lazy(() => import('@/pages/candidate/CandidateLogin'));
 const CandidatePortal = lazy(() => import('@/pages/candidate/CandidatePortal'));
 const ReferralPortal = lazy(() => import('@/pages/recruitment/ReferralPortal'));
 
-import PlaceholderPage from '@/pages/PlaceholderPage';
 import NotFound from '@/pages/NotFound';
 
 import CoreEngine from '@/pages/public/CoreEngine';
@@ -79,7 +78,7 @@ import Security from '@/pages/public/Security';
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { initialize, initialized } = useAuthStore();
+  const { initialize } = useAuthStore();
   const { theme } = useTheme();
 
   useEffect(() => {
