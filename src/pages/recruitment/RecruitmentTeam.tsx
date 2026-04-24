@@ -68,7 +68,7 @@ export function RecruitmentTeam() {
         .order('platform_role')
         .order('full_name');
 
-      if (!members) return [];
+      if (!members || members.length === 0) return [];
 
       // ⚡ Bolt: Batch fetch managers to avoid N+1 queries while retaining fast DB-level counts
       const managerIds = [...new Set(members.map((m: any) => m.manager_id).filter(Boolean))];
