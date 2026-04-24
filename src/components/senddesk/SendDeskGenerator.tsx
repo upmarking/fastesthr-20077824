@@ -41,7 +41,8 @@ const generateRandomString = (length: number, type: 'text' | 'number' | 'mix') =
   const charset = chars[type] || chars.mix;
   let result = '';
   const randomValues = new Uint32Array(length);
-  crypto.getRandomValues(randomValues);
+  window.crypto.getRandomValues(randomValues);
+
   for (let i = 0; i < length; i++) {
     result += charset.charAt(randomValues[i] % charset.length);
   }
