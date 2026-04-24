@@ -224,10 +224,10 @@ export default function DomainSettings() {
                     .{BASE_DOMAIN}
                   </div>
                 </div>
-                <Button variant="default" size="icon" className="h-10 w-10 shrink-0" onClick={handleSaveSlug} disabled={!slugAvailable || updateSlug.isPending || checkingSlug}>
+                <Button variant="default" size="icon" className="h-10 w-10 shrink-0" onClick={handleSaveSlug} disabled={!slugAvailable || updateSlug.isPending || checkingSlug} aria-label="Save workspace URL">
                   {updateSlug.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setEditingSlug(false)}>
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setEditingSlug(false)} aria-label="Cancel editing workspace URL">
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -249,9 +249,9 @@ export default function DomainSettings() {
                 <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">{domainStatus?.slug || '...'}</div>
                 <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">.{BASE_DOMAIN}</div>
               </div>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={handleStartEditSlug} title="Edit slug"><Pencil className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><Copy className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><ExternalLink className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={handleStartEditSlug} title="Edit slug" aria-label="Edit slug"><Pencil className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)} aria-label="Copy slug URL"><Copy className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)} aria-label="Open slug URL"><ExternalLink className="w-4 h-4" /></Button>
             </div>
           )}
         </CardContent>
@@ -274,10 +274,10 @@ export default function DomainSettings() {
             <>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-background border border-border/50 rounded-lg px-4 py-2.5 font-mono text-sm text-foreground">{domainStatus.custom_domain}</div>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => verifyDomain.mutate()} disabled={verifyDomain.isPending}>
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => verifyDomain.mutate()} disabled={verifyDomain.isPending} aria-label="Verify domain">
                   <RefreshCw className={`w-4 h-4 ${verifyDomain.isPending ? 'animate-spin' : ''}`} />
                 </Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(domainStatus.custom_domain!)}>
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(domainStatus.custom_domain!)} aria-label="Open custom domain">
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
@@ -318,7 +318,7 @@ export default function DomainSettings() {
                             </button>
                           </td>
                           <td className="px-4 py-2.5">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(record.value)}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(record.value)} aria-label="Copy record value">
                               <Copy className="w-3 h-3" />
                             </Button>
                           </td>

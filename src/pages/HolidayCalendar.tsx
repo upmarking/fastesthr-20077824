@@ -9,7 +9,7 @@ import { CalendarCheck, Plus, Trash2, Calendar } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -70,14 +70,6 @@ export default function HolidayCalendar() {
     onError: (e: any) => toast.error(e?.message || 'Failed to delete'),
   });
 
-  // Group holidays by month
-  const byMonth: Record<number, any[]> = {};
-  holidays.forEach((h: any) => {
-    const m = new Date(h.date).getMonth();
-    if (!byMonth[m]) byMonth[m] = [];
-    byMonth[m].push(h);
-  });
-
   const typeColor: Record<string, string> = {
     public: 'border-success text-success bg-success/10',
     restricted: 'border-warning text-warning bg-warning/10',
@@ -85,11 +77,38 @@ export default function HolidayCalendar() {
     company: 'border-primary text-primary bg-primary/10',
   };
 
-  const today = new Date();
-  const isUpcoming = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d >= today;
-  };
+  const today = useMemo(() => new Date(), []);
+
+  // ⚡ Bolt Performance Optimization:
+  // Instead of mapping and filtering the holidays array multiple times during
+  // the render loop (which creates O(N * 4) complexity on every re-render),
+  // we do a single pass over the data and memoize the result.
+  const { upcomingHolidays, pastHolidays, byMonth } = useMemo(() => {
+    const isUpcoming = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return d >= today;
+    };
+
+    const upcoming: any[] = [];
+    const past: any[] = [];
+    const grouped: Record<number, any[]> = {};
+
+    holidays.forEach((h: any) => {
+      // Group by month
+      const m = new Date(h.date).getMonth();
+      if (!grouped[m]) grouped[m] = [];
+      grouped[m].push(h);
+
+      // Categorize as upcoming or past
+      if (isUpcoming(h.date)) {
+        upcoming.push(h);
+      } else {
+        past.push(h);
+      }
+    });
+
+    return { upcomingHolidays: upcoming, pastHolidays: past, byMonth: grouped };
+  }, [holidays, today]);
 
   return (
     <div className="space-y-6">
@@ -169,7 +188,7 @@ export default function HolidayCalendar() {
             <Calendar className="w-8 h-8 text-primary" />
             <div>
               <p className="text-sm text-muted-foreground">Upcoming</p>
-              <p className="text-3xl font-bold text-primary">{holidays.filter((h: any) => isUpcoming(h.date)).length}</p>
+              <p className="text-3xl font-bold text-primary">{upcomingHolidays.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -178,7 +197,7 @@ export default function HolidayCalendar() {
             <CalendarCheck className="w-8 h-8 text-muted-foreground" />
             <div>
               <p className="text-sm text-muted-foreground">Past</p>
-              <p className="text-3xl font-bold text-muted-foreground">{holidays.filter((h: any) => !isUpcoming(h.date)).length}</p>
+              <p className="text-3xl font-bold text-muted-foreground">{pastHolidays.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -235,14 +254,14 @@ export default function HolidayCalendar() {
           <CardTitle>Upcoming Holidays</CardTitle>
         </CardHeader>
         <CardContent>
-          {holidays.filter((h: any) => isUpcoming(h.date)).length === 0 ? (
+          {upcomingHolidays.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8">
               <CalendarCheck className="h-10 w-10 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">No upcoming holidays for {selectedYear}</p>
             </div>
           ) : (
             <div className="divide-y divide-border/50">
-              {holidays.filter((h: any) => isUpcoming(h.date)).map((h: any) => {
+              {upcomingHolidays.map((h: any) => {
                 const d = new Date(h.date);
                 const daysUntil = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 return (
