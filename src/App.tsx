@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuthStore } from '@/store/auth-store';
 import { useTheme } from '@/hooks/use-theme';
+import { HelmetProvider } from 'react-helmet-async';
 import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -40,6 +41,8 @@ import HolidayCalendar from '@/pages/HolidayCalendar';
 import SendDesk from '@/pages/SendDesk';
 import VirtualIDCard from '@/pages/employees/VirtualIDCard';
 import PublicIDCard from '@/pages/public/PublicIDCard';
+import LegacyCompare from '@/pages/public/LegacyCompare';
+import StartupSolutions from '@/pages/solutions/StartupSolutions';
 
 
 import Companies from '@/pages/admin/Companies';
@@ -57,6 +60,7 @@ const JobApply = lazy(() => import('@/pages/company/JobApply'));
 const AIInterview = lazy(() => import('@/pages/company/AIInterview'));
 const CandidateLogin = lazy(() => import('@/pages/candidate/CandidateLogin'));
 const CandidatePortal = lazy(() => import('@/pages/candidate/CandidatePortal'));
+const ReferralPortal = lazy(() => import('@/pages/recruitment/ReferralPortal'));
 
 import PlaceholderPage from '@/pages/PlaceholderPage';
 import NotFound from '@/pages/NotFound';
@@ -140,6 +144,12 @@ function AppRoutes() {
       <Route path="/company/:companySlug/jobs/:jobSlug" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><JobApply /></Suspense>} />
       <Route path="/company/:companySlug/jobs/:jobSlug/interview/:candidateId" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><AIInterview /></Suspense>} />
 
+      {/* SEO Comparison Pages */}
+      <Route path="/vs/legacy-hrms" element={<LegacyCompare />} />
+
+      {/* SEO Solution Pages */}
+      <Route path="/solutions/startups" element={<StartupSolutions />} />
+
       {/* Candidate Portal */}
       <Route path="/candidate/login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CandidateLogin /></Suspense>} />
       <Route path="/candidate/portal" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#09090b]"><div className="font-mono text-white/30 text-sm animate-pulse">LOADING...</div></div>}><CandidatePortal /></Suspense>} />
@@ -158,6 +168,7 @@ function AppRoutes() {
       <Route path="/recruitment" element={withLayout(<Recruitment />)} />
       <Route path="/recruitment/new" element={withLayout(<NewJob />)} />
       <Route path="/recruitment/edit/:id" element={withLayout(<NewJob />)} />
+      <Route path="/referrals" element={withLayout(<ReferralPortal />)} />
       <Route path="/learning" element={withLayout(<Learning />)} />
       <Route path="/helpdesk" element={withLayout(<HelpDesk />)} />
       <Route path="/announcements" element={withLayout(<Announcements />)} />
@@ -197,15 +208,17 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

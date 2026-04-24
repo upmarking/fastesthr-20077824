@@ -19,9 +19,11 @@ interface BulkUploadDialogProps {
   jobId: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  source?: string;
+  referredBy?: string;
 }
 
-export function BulkUploadDialog({ jobId, isOpen, onOpenChange }: BulkUploadDialogProps) {
+export function BulkUploadDialog({ jobId, isOpen, onOpenChange, source = 'bulk_upload', referredBy }: BulkUploadDialogProps) {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [candidates, setCandidates] = useState<BulkCandidate[]>([]);
@@ -41,8 +43,9 @@ export function BulkUploadDialog({ jobId, isOpen, onOpenChange }: BulkUploadDial
           full_name,
           email,
           phone: phone || null,
-          source: 'bulk_upload',
+          source,
           stage: 'applied',
+          referred_by: referredBy || null,
           parsed_data: extra // Store all extra columns dynamically
         };
       });

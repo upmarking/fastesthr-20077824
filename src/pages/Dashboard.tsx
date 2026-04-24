@@ -620,6 +620,9 @@ function EmployeeDashboard() {
             <Button variant="outline" className="w-full justify-start gap-2" onClick={() => navigate('/documents')}>
               <BarChart3 className="h-4 w-4" /> Documents
             </Button>
+            <Button variant="secondary" className="w-full justify-start gap-2 bg-primary/10 text-primary hover:bg-primary/20" onClick={() => navigate('/onboarding')}>
+              <PartyPopper className="h-4 w-4" /> Complete Onboarding
+            </Button>
           </CardContent>
         </Card>
       </div>
