@@ -97,6 +97,7 @@ export function AIAssistant() {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           size="lg"
+          aria-label="Open AI Assistant"
           onClick={() => setOpen(true)}
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all hover:scale-110 animate-in fade-in slide-in-from-bottom-4"
           aria-label="Open AI Assistant"
@@ -143,7 +144,7 @@ export function AIAssistant() {
               className="text-sm"
               autoFocus
             />
-            <Button size="icon" onClick={handleSend} disabled={!input.trim()} aria-label="Send message">
+            <Button size="icon" aria-label="Send message" onClick={handleSend} disabled={!input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
