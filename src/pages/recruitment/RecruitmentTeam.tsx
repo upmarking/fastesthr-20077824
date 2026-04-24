@@ -70,45 +70,31 @@ export function RecruitmentTeam() {
 
       if (!members || members.length === 0) return [];
 
-      const memberIds = members.map((m: any) => m.id);
-      const managerIdsToFetch = [...new Set(members.map((m: any) => m.manager_id).filter(Boolean))];
+      // ⚡ Bolt: Batch fetch managers to avoid N+1 queries while retaining fast DB-level counts
+      const managerIds = [...new Set(members.map((m: any) => m.manager_id).filter(Boolean))];
 
-      // Fetch managers that are not already in the 'members' array
-      const missingManagerIds = managerIdsToFetch.filter(id => !members.find((m: any) => m.id === id));
-      let additionalManagers: any[] = [];
-      if (missingManagerIds.length > 0) {
-        const { data: mgrs } = await (supabase as any)
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', missingManagerIds);
-        additionalManagers = mgrs || [];
-      }
+      const [managersRes, ...countsRes] = await Promise.all([
+        managerIds.length > 0
+          ? (supabase as any).from('profiles').select('id, full_name').in('id', managerIds)
+          : Promise.resolve({ data: [] }),
+        ...members.map((m: any) =>
+          (supabase as any)
+            .from('candidates')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_to', m.id)
+            .neq('stage', 'rejected')
+        )
+      ]);
 
-      const managerMap = new Map();
-      members.forEach((m: any) => managerMap.set(m.id, m.full_name));
-      additionalManagers.forEach(m => managerMap.set(m.id, m.full_name));
+      const managerMap = new Map(
+        (managersRes.data || []).map((m: any) => [m.id, m.full_name])
+      );
 
-      // Fetch active leads for all members in a single batched query
-      const candidateCounts = new Map();
-      const { data: activeCandidates } = await (supabase as any)
-        .from('candidates')
-        .select('assigned_to')
-        .in('assigned_to', memberIds)
-        .neq('stage', 'rejected');
-
-      (activeCandidates || []).forEach((c: any) => {
-        if (c.assigned_to) {
-          candidateCounts.set(c.assigned_to, (candidateCounts.get(c.assigned_to) || 0) + 1);
-        }
-      });
-
-      const enriched = members.map((m: any) => ({
+      return members.map((m: any, index: number) => ({
         ...m,
         managerName: m.manager_id ? managerMap.get(m.manager_id) : undefined,
-        activeLeads: candidateCounts.get(m.id) || 0,
+        activeLeads: countsRes[index].count || 0
       })) as TeamMember[];
-
-      return enriched;
     },
     enabled: !!profile?.company_id,
   });
