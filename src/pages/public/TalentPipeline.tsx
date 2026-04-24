@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { Users, Filter, Rocket, Star, Sparkles, Search, UserCheck, Target } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 const TalentPipeline = () => {
   const { scrollYProgress } = useScroll();
@@ -8,6 +9,17 @@ const TalentPipeline = () => {
 
   return (
     <PublicLayout title="Talent Pipeline">
+      <SEO 
+        title="AI-Driven Talent Pipeline & ATS | Intelligent Sourcing | FastestHR"
+        description="Identify elite talent with neural sourcing and automated vetting. Transform your recruitment into a high-velocity talent acquisition machine."
+        keywords="AI recruitment platform, intelligent ATS, talent pipeline automation, neural sourcing software"
+        type="software"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Platform', path: '/' },
+          { name: 'Talent Pipeline', path: '/platform/talent-pipeline' }
+        ]}
+      />
       <div className="relative z-10 space-y-32 py-10">
         
         {/* Hero Section */}
