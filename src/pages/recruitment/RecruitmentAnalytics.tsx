@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3, TrendingUp, Users, Target, Award, Loader2,
@@ -75,6 +76,83 @@ export function RecruitmentAnalytics() {
     enabled: !!profile?.company_id,
   });
 
+  // ⚡ Bolt: Optimize Recruitment Analytics with single-pass memoization
+  // Computes funnel stats, global scores, and recruiter-specific metrics in one O(N) pass.
+  const {
+    funnelData, maxFunnelCount, totalApplied, totalHired, conversionRate, avgScore, recruiterStats
+  } = useMemo(() => {
+    const stageCounts: Record<string, number> = {};
+    STAGES.forEach(s => stageCounts[s] = 0);
+
+    let totalScore = 0;
+    let scoredCount = 0;
+
+    const memberStatsMap: Record<string, { total: number, hired: number, scoreSum: number, scoredCount: number, byStage: Record<string, number> }> = {};
+
+    const safeTeamMembers = teamMembers || [];
+    const team = [...safeTeamMembers, ...(profile?.platform_role === 'recruiter' ? [{ id: profile.id, full_name: 'You', platform_role: 'recruiter' }] : [])];
+    team.forEach(m => {
+      const initStages: Record<string, number> = {};
+      STAGES.forEach(s => initStages[s] = 0);
+      memberStatsMap[m.id] = { total: 0, hired: 0, scoreSum: 0, scoredCount: 0, byStage: initStages };
+    });
+
+    const safeCandidates = candidates || [];
+    safeCandidates.forEach((c: any) => {
+      // Global stats
+      if (stageCounts[c.stage] !== undefined) {
+        stageCounts[c.stage]++;
+      }
+      if (c.score !== null) {
+        totalScore += c.score;
+        scoredCount++;
+      }
+
+      // Member stats
+      const ms = memberStatsMap[c.assigned_to];
+      if (ms) {
+        ms.total++;
+        if (c.stage === 'hired') ms.hired++;
+        if (ms.byStage[c.stage] !== undefined) ms.byStage[c.stage]++;
+        if (c.score !== null) {
+          ms.scoreSum += c.score;
+          ms.scoredCount++;
+        }
+      }
+    });
+
+    const funnel = STAGES.map(stage => ({ stage, count: stageCounts[stage] }));
+    const maxFC = Math.max(...funnel.map(f => f.count), 1);
+    const totApplied = safeCandidates.length;
+    const totHired = stageCounts['hired'] || 0;
+    const convRate = totApplied > 0 ? ((totHired / totApplied) * 100).toFixed(1) : '0';
+    const aScore = scoredCount > 0 ? (totalScore / scoredCount).toFixed(1) : '—';
+
+    const rStats = team.map(member => {
+      const ms = memberStatsMap[member.id];
+      const mConv = ms.total > 0 ? ((ms.hired / ms.total) * 100).toFixed(0) : '0';
+      const mScore = ms.scoredCount > 0 ? (ms.scoreSum / ms.scoredCount).toFixed(1) : null;
+      return {
+        ...member,
+        total: ms.total,
+        hired: ms.hired,
+        conversion: mConv,
+        avgScore: mScore,
+        byStage: ms.byStage
+      };
+    }).sort((a, b) => b.total - a.total);
+
+    return {
+      funnelData: funnel,
+      maxFunnelCount: maxFC,
+      totalApplied: totApplied,
+      totalHired: totHired,
+      conversionRate: convRate,
+      avgScore: aScore,
+      recruiterStats: rStats
+    };
+  }, [candidates, teamMembers, profile]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,49 +160,6 @@ export function RecruitmentAnalytics() {
       </div>
     );
   }
-
-  // Overall funnel
-  const funnelData = STAGES.map((stage) => ({
-    stage,
-    count: candidates.filter((c: any) => c.stage === stage).length,
-  }));
-  const maxFunnelCount = Math.max(...funnelData.map((f) => f.count), 1);
-  const totalApplied = candidates.length;
-  const totalHired = funnelData.find((f) => f.stage === 'hired')?.count || 0;
-  const conversionRate = totalApplied > 0 ? ((totalHired / totalApplied) * 100).toFixed(1) : '0';
-
-  const avgScore = candidates.filter((c: any) => c.score !== null).length > 0
-    ? (candidates
-        .filter((c: any) => c.score !== null)
-        .reduce((sum: number, c: any) => sum + c.score, 0) /
-        candidates.filter((c: any) => c.score !== null).length
-      ).toFixed(1)
-    : '—';
-
-  // Per-recruiter stats
-  const recruiterStats = [...teamMembers,
-    ...(profile?.platform_role === 'recruiter' ? [{ id: profile.id, full_name: 'You', platform_role: 'recruiter' }] : [])
-  ].map((member: any) => {
-    const memberCandidates = candidates.filter((c: any) => c.assigned_to === member.id);
-    const hired = memberCandidates.filter((c: any) => c.stage === 'hired').length;
-    const conversion = memberCandidates.length > 0 ? ((hired / memberCandidates.length) * 100).toFixed(0) : '0';
-    const avgMemberScore = memberCandidates.filter((c: any) => c.score !== null).length > 0
-      ? (memberCandidates.filter((c: any) => c.score !== null).reduce((s: number, c: any) => s + c.score, 0) /
-          memberCandidates.filter((c: any) => c.score !== null).length).toFixed(1)
-      : null;
-
-    return {
-      ...member,
-      total: memberCandidates.length,
-      hired,
-      conversion,
-      avgScore: avgMemberScore,
-      byStage: STAGES.reduce((acc: any, s) => {
-        acc[s] = memberCandidates.filter((c: any) => c.stage === s).length;
-        return acc;
-      }, {}),
-    };
-  }).sort((a, b) => b.total - a.total);
 
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';

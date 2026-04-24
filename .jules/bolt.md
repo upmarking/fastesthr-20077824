@@ -5,3 +5,6 @@
 ## 2026-03-29 - Use Metadata Wrappers for List Filtering Optimization
 **Learning:** Directly augmenting or cloning source data objects (e.g., `employees.map(e => ({ ...e, _searchStr }))`) to optimize list filtering breaks referential integrity. This can cause unnecessary re-renders in child components and break logic relying on object identity (e.g., selection state).
 **Action:** When optimizing list filtering with `useMemo`, use a metadata wrapper pattern: `list.map(item => ({ item, precalculatedField }))`. Perform the filter on the metadata and then map back to the original `item` references. This preserves identity while still eliminating redundant allocations and operations during filtering.
+## 2026-04-24 - Optimize multi-pass filtering bottlenecks
+**Learning:** In React components like analytics dashboards, deriving multiple stats via repeated inline `.filter()` calls inside `.map()` creates O(N * M) performance bottlenecks.
+**Action:** Use a single-pass iteration inside a `useMemo` block to calculate all derived metrics at once.
