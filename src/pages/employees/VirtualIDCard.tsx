@@ -89,7 +89,7 @@ export default function VirtualIDCard() {
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${employee.id}-${Math.random()}.${fileExt}`;
+      const fileName = `${employee.id}-${crypto.randomUUID()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
       const { error: uploadError } = await supabase.storage

@@ -6,3 +6,8 @@
 **Vulnerability:** ID card templates containing HTML and `<style>` blocks (authored by potentially malicious company admins) were rendered directly via `dangerouslySetInnerHTML` in three components without sanitization, leading to Stored XSS. Also, template variable replacement used string replacements `html.replace(regex, val)`, which suffers from regex backreference attacks if `val` contains tokens like `$&`.
 **Learning:** Tenant-customizable templates must be sanitized before rendering. Using `dangerouslySetInnerHTML` without `dompurify` is dangerous, even for internal users. Furthermore, string-based regex replacement fails securely on malicious strings with regex tokens.
 **Prevention:** Always wrap `dangerouslySetInnerHTML` content with `DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true })` if style tags are needed. Always use the callback form for replace `replace(regex, () => val)` to treat replacement values as literal strings.
+
+## 2024-05-18 - [Insecure Randomness for Tokens and IDs]
+**Vulnerability:** Used `Math.random()` to generate random strings for token creation (`generateRandomString` in `SendDeskGenerator`) and for file names in uploads (`VirtualIDCard` and `Documents`).
+**Learning:** `Math.random()` is not cryptographically secure and can result in predictable outputs, especially problematic for generating password-like strings or predictable file paths.
+**Prevention:** Always use `crypto.randomUUID()` for unique identifiers or `window.crypto.getRandomValues()` with typed arrays for generating secure random strings/tokens.
