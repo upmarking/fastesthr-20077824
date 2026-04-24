@@ -1,3 +1,7 @@
+## 2023-10-27 - Fix XSS Vulnerability in External Links
+**Vulnerability:** User-supplied URLs rendered directly in `href` attributes without protocol validation could lead to Cross-Site Scripting (XSS) if they contain `javascript:` URIs.
+**Learning:** Found instances where meeting links (`interview.meeting_link`) and company external links (`website`, `linkedin_url`) were directly injected into `<a>` tags.
+**Prevention:** Always validate external URLs to ensure they start with safe protocols (`http://` or `https://`) before rendering them in `href` attributes using a centralized utility function like `isSafeUrl`.
 ## 2024-03-24 - HTML Injection in PDF Templates
 **Vulnerability:** XSS/HTML Injection vulnerability in `src/lib/pdf-generator.ts` where unescaped user inputs (e.g., candidate names, custom template variables) were directly substituted into HTML strings before being rendered to PDF and persisted.
 **Learning:** The PDF generator natively executes `<script>` tags found in templates for features like CTC calculations before capturing `.innerHTML`. Using robust sanitizers like DOMPurify on the full template would strip these required scripts and break the feature.

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, MapPin, Users, Globe, Linkedin, Building2, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { isSafeUrl } from '@/lib/utils';
 import { getCompanySlugFromHost } from '@/utils/tenantUtils';
+import { isSafeUrl } from '@/lib/utils';
 
 const HERO_GRADIENT = 'linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%)';
 
