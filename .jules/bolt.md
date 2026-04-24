@@ -8,6 +8,10 @@
 ## 2026-03-29 - Use Metadata Wrappers for List Filtering Optimization
 **Learning:** Directly augmenting or cloning source data objects (e.g., `employees.map(e => ({ ...e, _searchStr }))`) to optimize list filtering breaks referential integrity. This can cause unnecessary re-renders in child components and break logic relying on object identity (e.g., selection state).
 **Action:** When optimizing list filtering with `useMemo`, use a metadata wrapper pattern: `list.map(item => ({ item, precalculatedField }))`. Perform the filter on the metadata and then map back to the original `item` references. This preserves identity while still eliminating redundant allocations and operations during filtering.
+
+## 2024-06-11 - Single-Pass Aggregation over Repeated Filtering
+**Learning:** In analytics or dashboard views (e.g., `RecruitmentAnalytics.tsx`), calculating multiple grouped or derived metrics (funnels, averages, per-user stats) by repeatedly calling `Array.filter()` and `Array.reduce()` during render leads to O(N*M) complexity and unnecessary re-renders as the dataset grows.
+**Action:** When deriving multiple metrics from a single large array, replace repeated `filter()` calls with a single-pass iteration (using `forEach` or `reduce`) inside a `useMemo` block. Create local state maps/buckets within the memoized function, process the array once to populate them, and return the aggregated results. This reduces complexity to O(N) and prevents unnecessary recalculations.
 ## 2024-05-18 - Unnecessary API calls due to missing input debouncing
 **Learning:** Raw input search values used directly inside React Query `queryKey` without debouncing can trigger excessive network and database calls (one per keystroke) leading to significant overhead.
 **Action:** Always wrap user text input state with `useDebounce` and use the debounced value in the query dependencies instead of the raw input.
