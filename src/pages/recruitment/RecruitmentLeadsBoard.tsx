@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   Users, Search, Filter, UserCheck, Briefcase,
   Star, Clock, ChevronDown, LayoutList, Columns, Loader2,
-  Mail, Phone
+  Mail, Phone, UserPlus
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,7 +128,8 @@ export function RecruitmentLeadsBoard() {
         .select(`
           *,
           jobs(title, id),
-          assigned_profile:assigned_to(id, full_name, platform_role)
+          assigned_profile:assigned_to(id, full_name, platform_role),
+          referrer:referred_by(id, full_name)
         `)
         .eq('company_id', profile!.company_id!)
         .order('assigned_at', { ascending: false, nullsFirst: false })
@@ -341,8 +342,9 @@ export function RecruitmentLeadsBoard() {
               )}
               <span>Candidate</span>
             </div>
+            <div className="col-span-1">Ref</div>
             <div className="col-span-2">Job</div>
-            <div className="col-span-2">Stage</div>
+            <div className="col-span-1">Stage</div>
             <div className="col-span-2">Assigned To</div>
             <div className="col-span-1 text-center">Score</div>
             <div className="col-span-2">Last Updated</div>
@@ -386,6 +388,18 @@ export function RecruitmentLeadsBoard() {
                         )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Referrer */}
+                  <div className="col-span-1">
+                    {lead.referrer ? (
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-500 font-bold bg-emerald-500/5 px-2 py-0.5 rounded-full w-fit border border-emerald-500/10">
+                        <UserPlus className="h-2.5 w-2.5" />
+                        {lead.referrer.full_name}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/30 px-2">—</span>
+                    )}
                   </div>
 
                   {/* Job */}
@@ -528,6 +542,14 @@ export function RecruitmentLeadsBoard() {
                               <Briefcase className="h-2.5 w-2.5 inline mr-1" />
                               {lead.jobs?.title}
                             </p>
+                            {lead.referrer && (
+                              <div className="flex items-center gap-1 mt-2 bg-emerald-500/5 p-1 px-1.5 rounded-md border border-emerald-500/10 w-fit">
+                                <UserPlus className="h-2.5 w-2.5 text-emerald-500" />
+                                <span className="text-[8px] font-bold text-emerald-500/80 uppercase">
+                                  Ref: {lead.referrer.full_name}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
