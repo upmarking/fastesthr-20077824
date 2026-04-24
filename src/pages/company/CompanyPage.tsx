@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, MapPin, Users, Globe, Linkedin, Building2, DollarSign, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { isSafeUrl } from '@/lib/utils';
 import { getCompanySlugFromHost } from '@/utils/tenantUtils';
 import { isSafeUrl } from '@/lib/utils';
 

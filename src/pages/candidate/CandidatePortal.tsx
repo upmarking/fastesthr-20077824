@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Briefcase, Clock, MapPin, Calendar, Video, Users, LogOut, Loader2, ArrowRight, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
+import { isSafeUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { isSafeUrl } from '@/lib/utils';
 
@@ -208,7 +209,7 @@ export default function CandidatePortal() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {interview.meeting_link && interview.status === 'scheduled' && isSafeUrl(interview.meeting_link) && (
+                              {interview.meeting_link && isSafeUrl(interview.meeting_link) && interview.status === 'scheduled' && (
                                 <a
                                   href={interview.meeting_link}
                                   target="_blank"
