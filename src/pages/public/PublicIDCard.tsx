@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import DOMPurify from 'dompurify';
 import { Loader2, CheckCircle2, ShieldCheck, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { escapeHtml } from '@/lib/utils';
 
 export default function PublicIDCard() {
   const { publicId } = useParams<{ publicId: string }>();
@@ -40,7 +41,7 @@ export default function PublicIDCard() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), () => val);
+      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(String(val)));
     });
 
     return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });

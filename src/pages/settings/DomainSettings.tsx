@@ -249,9 +249,9 @@ export default function DomainSettings() {
                 <div className="flex-1 px-4 py-2.5 font-mono text-sm text-foreground">{domainStatus?.slug || '...'}</div>
                 <div className="px-4 py-2.5 bg-muted/50 text-sm text-muted-foreground border-l border-border/50">.{BASE_DOMAIN}</div>
               </div>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={handleStartEditSlug} title="Edit slug"><Pencil className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><Copy className="w-4 h-4" /></Button>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)}><ExternalLink className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={handleStartEditSlug} title="Edit slug" aria-label="Edit slug"><Pencil className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => copyToClipboard(`${domainStatus?.slug}.${BASE_DOMAIN}`)} aria-label="Copy slug URL"><Copy className="w-4 h-4" /></Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(`${domainStatus?.slug}.${BASE_DOMAIN}`)} aria-label="Open slug URL"><ExternalLink className="w-4 h-4" /></Button>
             </div>
           )}
         </CardContent>
@@ -277,7 +277,7 @@ export default function DomainSettings() {
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => verifyDomain.mutate()} disabled={verifyDomain.isPending} aria-label="Verify domain">
                   <RefreshCw className={`w-4 h-4 ${verifyDomain.isPending ? 'animate-spin' : ''}`} />
                 </Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(domainStatus.custom_domain!)} aria-label="Open domain">
+                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => openUrl(domainStatus.custom_domain!)} aria-label="Open custom domain">
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
