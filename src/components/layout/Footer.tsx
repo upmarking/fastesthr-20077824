@@ -19,31 +19,31 @@ export const Footer = () => {
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-bold text-white tracking-tight">Platform</h4>
+            <h4 className="font-bold text-white tracking-tight">Solutions</h4>
             <nav className="flex flex-col space-y-3">
-              <Link to="/platform/core-engine" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Core Engine</Link>
-              <Link to="/platform/payroll-os" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Payroll OS</Link>
-              <Link to="/platform/talent-pipeline" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Talent Pipeline</Link>
-              <Link to="/platform/api-docs" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">API Docs</Link>
+              <Link to="/solutions/startups" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors font-medium">For Tech Startups</Link>
+              <Link to="/vs/legacy-hrms" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors font-medium">VS. Legacy Systems</Link>
+              <Link to="/platform/core-engine" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Enterprise Core</Link>
+              <Link to="/register" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Global Scaling</Link>
             </nav>
           </div>
           
           <div className="space-y-4">
-            <h4 className="font-bold text-white tracking-tight">Company</h4>
+            <h4 className="font-bold text-white tracking-tight">Intelligence Hub</h4>
             <nav className="flex flex-col space-y-3">
-              <Link to="/company/about" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">About</Link>
-              <Link to="/blog" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Blog</Link>
-              <Link to="/company/careers" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Careers</Link>
-              <Link to="/company/changelog" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Changelog</Link>
+              <Link to="/blog" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">HR Glossary</Link>
+              <Link to="/company/about" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">OS Architecture</Link>
+              <Link to="/legal/security" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Security Whitepaper</Link>
+              <Link to="/platform/api-docs" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Developer Portal</Link>
             </nav>
           </div>
 
           <div className="space-y-4">
             <h4 className="font-bold text-white tracking-tight">Legal</h4>
             <nav className="flex flex-col space-y-3">
-              <Link to="/legal/terms" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Terms of Service</Link>
-              <Link to="/legal/privacy" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Privacy Policy</Link>
-              <Link to="/legal/security" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Security</Link>
+              <Link to="/legal/terms" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Terms</Link>
+              <Link to="/legal/privacy" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors">Privacy</Link>
+              <Link to="/company/changelog" className="text-zinc-500 hover:text-cyan-400 text-sm transition-colors text-[10px] font-mono opacity-50 uppercase tracking-tighter">v4.2.9-stable</Link>
             </nav>
           </div>
         </div>

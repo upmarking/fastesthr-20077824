@@ -24,7 +24,7 @@ export function OfferLetterRenderer({
     Object.entries(variables).forEach(([key, value]) => {
       // Support both {{Key}} and {{key}} formats
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-      content = content.replace(regex, value);
+      content = content.replace(regex, () => value);
     });
     // Sanitize the HTML to prevent XSS vulnerabilities while allowing custom styles
     return DOMPurify.sanitize(content, {
@@ -150,7 +150,7 @@ export function replaceVariables(html: string, variables: Record<string, string>
     let content = html;
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
-      content = content.replace(regex, value);
+      content = content.replace(regex, () => value);
     });
     return content;
 }

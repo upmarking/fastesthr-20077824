@@ -7,9 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/auth-store';
 import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'dompurify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Eye, Code, Save, Info, Sparkles } from 'lucide-react';
+import { escapeHtml } from '@/lib/utils';
+
+const escapeHtml = (unsafe: string) => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
 
 export function IDCardTemplateEditor() {
   const { profile } = useAuthStore();
@@ -75,10 +86,10 @@ export function IDCardTemplateEditor() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), val);
+      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(val));
     });
 
-    return html;
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
   };
 
   if (isLoading) {

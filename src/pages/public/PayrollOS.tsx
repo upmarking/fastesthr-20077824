@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { DollarSign, Globe, ShieldCheck, TrendingUp, CreditCard, Banknote, RefreshCcw, Landmark } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 const PayrollOS = () => {
   const { scrollYProgress } = useScroll();
@@ -8,6 +9,17 @@ const PayrollOS = () => {
 
   return (
     <PublicLayout title="Payroll OS">
+      <SEO 
+        title="Zero-Trust Payroll OS | Automated Global Payouts | FastestHR"
+        description="Automate payroll across 150+ jurisdictions with zero-trust security. Instant settlements and autonomous tax compliance for global workforces."
+        keywords="zero-trust payroll, global payroll automation, international tax compliance software, instant payroll settlement"
+        type="software"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Platform', path: '/' },
+          { name: 'Payroll OS', path: '/platform/payroll-os' }
+        ]}
+      />
       <div className="relative z-10 space-y-32 py-10">
         
         {/* Hero Section */}
