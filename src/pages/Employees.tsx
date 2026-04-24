@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useDebounce } from '@/hooks/use-debounce';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
 import { OrgChartPro } from '@/components/employees/OrgChartPro';
 import { useDebounce } from '@/hooks/use-debounce';
