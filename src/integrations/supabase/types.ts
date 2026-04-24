@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interviews: {
+        Row: {
+          candidate_id: string
+          created_at: string | null
+          expectations: Json | null
+          expires_at: string
+          feedback: string | null
+          id: string
+          job_id: string
+          link_hash: string
+          score: number | null
+          status: string
+          transcript: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string | null
+          expectations?: Json | null
+          expires_at: string
+          feedback?: string | null
+          id?: string
+          job_id: string
+          link_hash: string
+          score?: number | null
+          status?: string
+          transcript?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string | null
+          expectations?: Json | null
+          expires_at?: string
+          feedback?: string | null
+          id?: string
+          job_id?: string
+          link_hash?: string
+          score?: number | null
+          status?: string
+          transcript?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interviews_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_reads: {
         Row: {
           announcement_id: string
@@ -355,6 +415,8 @@ export type Database = {
       }
       candidates: {
         Row: {
+          ai_analysis: Json | null
+          ai_interview_result: Json | null
           assigned_at: string | null
           assigned_by: string | null
           assigned_to: string | null
@@ -377,6 +439,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_analysis?: Json | null
+          ai_interview_result?: Json | null
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
@@ -399,6 +463,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_analysis?: Json | null
+          ai_interview_result?: Json | null
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
@@ -461,6 +527,7 @@ export type Database = {
       companies: {
         Row: {
           about_company: string | null
+          company_culture: string | null
           compensation_structure: Json | null
           country: string | null
           created_at: string
@@ -469,7 +536,11 @@ export type Database = {
           deleted_at: string | null
           domain_config: Json | null
           domain_verified: boolean | null
+          employee_id_next_number: number | null
+          employee_id_prefix: string | null
           id: string
+          id_card_primary_color: string | null
+          id_card_template: string | null
           industry: string | null
           is_active: boolean | null
           license_limit: number | null
@@ -500,6 +571,7 @@ export type Database = {
         }
         Insert: {
           about_company?: string | null
+          company_culture?: string | null
           compensation_structure?: Json | null
           country?: string | null
           created_at?: string
@@ -508,7 +580,11 @@ export type Database = {
           deleted_at?: string | null
           domain_config?: Json | null
           domain_verified?: boolean | null
+          employee_id_next_number?: number | null
+          employee_id_prefix?: string | null
           id?: string
+          id_card_primary_color?: string | null
+          id_card_template?: string | null
           industry?: string | null
           is_active?: boolean | null
           license_limit?: number | null
@@ -539,6 +615,7 @@ export type Database = {
         }
         Update: {
           about_company?: string | null
+          company_culture?: string | null
           compensation_structure?: Json | null
           country?: string | null
           created_at?: string
@@ -547,7 +624,11 @@ export type Database = {
           deleted_at?: string | null
           domain_config?: Json | null
           domain_verified?: boolean | null
+          employee_id_next_number?: number | null
+          employee_id_prefix?: string | null
           id?: string
+          id_card_primary_color?: string | null
+          id_card_template?: string | null
           industry?: string | null
           is_active?: boolean | null
           license_limit?: number | null
@@ -767,6 +848,61 @@ export type Database = {
           {
             foreignKeyName: "courses_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_reports: {
+        Row: {
+          company_id: string
+          created_at: string
+          date: string
+          evening_summary: string | null
+          id: string
+          mood: string | null
+          morning_plan: Json | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          date?: string
+          evening_summary?: string | null
+          id?: string
+          mood?: string | null
+          morning_plan?: Json | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          date?: string
+          evening_summary?: string | null
+          id?: string
+          mood?: string | null
+          morning_plan?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_reports_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1064,11 +1200,13 @@ export type Database = {
           first_name: string
           gender: string | null
           id: string
+          id_card_image_history: Json | null
           last_name: string
           nationality: string | null
           personal_email: string | null
           phone: string | null
           probation_end_date: string | null
+          public_id: string | null
           reporting_manager_id: string | null
           status: Database["public"]["Enums"]["employee_status"] | null
           updated_at: string
@@ -1097,11 +1235,13 @@ export type Database = {
           first_name: string
           gender?: string | null
           id?: string
+          id_card_image_history?: Json | null
           last_name: string
           nationality?: string | null
           personal_email?: string | null
           phone?: string | null
           probation_end_date?: string | null
+          public_id?: string | null
           reporting_manager_id?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
           updated_at?: string
@@ -1130,11 +1270,13 @@ export type Database = {
           first_name?: string
           gender?: string | null
           id?: string
+          id_card_image_history?: Json | null
           last_name?: string
           nationality?: string | null
           personal_email?: string | null
           phone?: string | null
           probation_end_date?: string | null
+          public_id?: string | null
           reporting_manager_id?: string | null
           status?: Database["public"]["Enums"]["employee_status"] | null
           updated_at?: string
@@ -1477,6 +1619,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          ai_interview_enabled: boolean | null
           company_id: string
           created_at: string
           department_id: string | null
@@ -1492,6 +1635,7 @@ export type Database = {
           posted_by: string | null
           published_at: string | null
           requirements: string | null
+          stage_ai_settings: Json | null
           stage_automations: Json | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -1499,6 +1643,7 @@ export type Database = {
           work_type: string | null
         }
         Insert: {
+          ai_interview_enabled?: boolean | null
           company_id: string
           created_at?: string
           department_id?: string | null
@@ -1516,6 +1661,7 @@ export type Database = {
           posted_by?: string | null
           published_at?: string | null
           requirements?: string | null
+          stage_ai_settings?: Json | null
           stage_automations?: Json | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
@@ -1523,6 +1669,7 @@ export type Database = {
           work_type?: string | null
         }
         Update: {
+          ai_interview_enabled?: boolean | null
           company_id?: string
           created_at?: string
           department_id?: string | null
@@ -1540,6 +1687,7 @@ export type Database = {
           posted_by?: string | null
           published_at?: string | null
           requirements?: string | null
+          stage_ai_settings?: Json | null
           stage_automations?: Json | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
@@ -1895,6 +2043,244 @@ export type Database = {
           },
           {
             foreignKeyName: "offer_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_automations: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          email_body: string | null
+          email_subject: string | null
+          event: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          email_body?: string | null
+          email_subject?: string | null
+          event: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          email_body?: string | null
+          email_subject?: string | null
+          event?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_automations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_automations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_document_requirements: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_mandatory: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          title: string
+          type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_document_requirements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_document_requirements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_document_submissions: {
+        Row: {
+          employee_id: string
+          file_url: string | null
+          id: string
+          requirement_id: string
+          status: string
+          text_content: string | null
+          uploaded_at: string
+        }
+        Insert: {
+          employee_id: string
+          file_url?: string | null
+          id?: string
+          requirement_id: string
+          status?: string
+          text_content?: string | null
+          uploaded_at?: string
+        }
+        Update: {
+          employee_id?: string
+          file_url?: string | null
+          id?: string
+          requirement_id?: string
+          status?: string
+          text_content?: string | null
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_document_submissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_document_submissions_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_document_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_progress: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string | null
+          employee_id: string | null
+          id: string
+          step_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          step_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          id?: string
+          step_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_progress_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_progress_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_progress_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_steps: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          description: string | null
+          icon_name: string | null
+          id: string
+          is_mandatory: boolean | null
+          order_index: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          order_index?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          is_mandatory?: boolean | null
+          order_index?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_steps_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_steps_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "public_companies"
@@ -2774,6 +3160,54 @@ export type Database = {
           },
         ]
       }
+      sprints: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprints_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sprints_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_responses: {
         Row: {
           answers: Json | null
@@ -2876,6 +3310,138 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_time_logs: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          end_time: string | null
+          id: string
+          start_time: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_time_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_time_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string
+          company_id: string
+          created_at: string
+          description: string | null
+          estimated_minutes: number | null
+          id: string
+          priority: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          sprint_id: string | null
+          status: string | null
+          title: string
+          type: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          priority?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          sprint_id?: string | null
+          status?: string | null
+          title: string
+          type?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          estimated_minutes?: number | null
+          id?: string
+          priority?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          sprint_id?: string | null
+          status?: string | null
+          title?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "public_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
             referencedColumns: ["id"]
           },
         ]
