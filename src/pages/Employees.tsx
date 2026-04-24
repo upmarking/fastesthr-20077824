@@ -14,7 +14,6 @@ import { useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { EmployeeOrgChart } from '@/components/employees/EmployeeOrgChart';
 import { OrgChartPro } from '@/components/employees/OrgChartPro';
-import { useDebounce } from '@/hooks/use-debounce';
 
 // ⚡ Bolt: Hoisted static object configuration outside of component body
 // to prevent unnecessary memory reallocation on every render.
@@ -34,10 +33,6 @@ export default function Employees() {
   // This reduces Supabase queries and React Query cache invalidations significantly.
   const debouncedSearch = useDebounce(search, 300);
   const [view, setView] = useState<'grid' | 'list' | 'org'>('grid');
-
-  // ⚡ Bolt: Debounce search input to prevent excessive API calls
-  // and database queries while the user is typing
-  const debouncedSearch = useDebounce(search, 300);
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', debouncedSearch, profile?.company_id],

@@ -303,7 +303,8 @@ export function OnboardingSettingsDialog({ open, onOpenChange, companyId }: Onbo
                                 <Button 
                                     key={opt.name} 
                                     variant={stepForm.icon_name === opt.name ? 'default' : 'outline'} 
-                                    size="icon" aria-label={`Select ${opt.name} icon`} className="h-8 w-8"
+                                    size="icon" 
+                                    className="h-8 w-8"
                                     onClick={() => setStepForm(p=>({...p, icon_name: opt.name}))}
                                     aria-label={`Select icon ${opt.name}`}
                                 >

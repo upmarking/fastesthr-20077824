@@ -15,7 +15,6 @@ import { useAuthStore } from '@/store/auth-store';
 import { useState } from 'react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { toast } from 'sonner';
-import { useDebounce } from '@/hooks/use-debounce';
 
 interface TicketForm {
   subject: string;
@@ -29,10 +28,6 @@ export default function HelpDesk() {
   const { profile } = useAuthStore();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-
-  // ⚡ Bolt: Debounce search input to prevent excessive API calls
-  // and database queries while the user is typing
-  const debouncedSearch = useDebounce(search, 300);
 
   // ⚡ Bolt: Debounce search input to prevent firing an API call on every keystroke.
   // This reduces Supabase queries and React Query cache invalidations significantly.

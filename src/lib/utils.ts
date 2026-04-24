@@ -5,10 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function isSafeUrl(url: string | undefined | null): boolean {
-  if (!url) return false;
-  const lowerUrl = url.trim().toLowerCase();
-  return lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://');
 /**
  * Validates if a URL is safe to use in href attributes to prevent protocol-based XSS attacks.
  * Only allows http:// and https:// URLs.
@@ -21,6 +17,8 @@ export function isSafeUrl(url: string | undefined | null): boolean {
   } catch {
     return false;
   }
+}
+
 export function escapeHtml(unsafe: string): string {
   if (typeof unsafe !== 'string') return unsafe;
   return unsafe

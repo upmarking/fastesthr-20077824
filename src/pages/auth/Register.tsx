@@ -112,7 +112,6 @@ export default function Register() {
               />
               <Button
                 type="button" variant="ghost" size="icon"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
