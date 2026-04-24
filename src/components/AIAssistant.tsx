@@ -141,6 +141,7 @@ export function AIAssistant() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               className="text-sm"
+              autoFocus
             />
             <Button size="icon" onClick={handleSend} disabled={!input.trim()} aria-label="Send message">
               <Send className="h-4 w-4" />
