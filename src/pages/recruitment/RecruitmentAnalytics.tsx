@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import {
   BarChart3, TrendingUp, Users, Target, Award, Loader2,
   ArrowUpRight, Star
@@ -75,6 +76,74 @@ export function RecruitmentAnalytics() {
     enabled: !!profile?.company_id,
   });
 
+  const { funnelData, maxFunnelCount, totalApplied, totalHired, conversionRate, avgScore, recruiterStats } = useMemo(() => {
+    // 1. Single pass over candidates to compute funnel counts, total score, and recruiter buckets
+    const countsByStage: Record<string, number> = {};
+    STAGES.forEach(s => countsByStage[s] = 0);
+
+    let scoredCount = 0;
+    let totalScoreSum = 0;
+
+    const recruitersMap: Record<string, { total: number; hired: number; scoreSum: number; scoredCount: number; byStage: Record<string, number> }> = {};
+
+    const availableMembers = [...teamMembers, ...(profile?.platform_role === 'recruiter' ? [{ id: profile.id, full_name: 'You', platform_role: 'recruiter' }] : [])];
+    availableMembers.forEach(m => {
+      recruitersMap[m.id] = { total: 0, hired: 0, scoreSum: 0, scoredCount: 0, byStage: STAGES.reduce((acc, s) => ({ ...acc, [s]: 0 }), {}) };
+    });
+
+    candidates.forEach((c: any) => {
+      // Funnel
+      if (countsByStage[c.stage] !== undefined) {
+        countsByStage[c.stage]++;
+      }
+
+      // Scores
+      if (c.score !== null) {
+        scoredCount++;
+        totalScoreSum += c.score;
+      }
+
+      // Recruiter stats
+      const rStats = recruitersMap[c.assigned_to];
+      if (rStats) {
+        rStats.total++;
+        if (c.stage === 'hired') rStats.hired++;
+        if (rStats.byStage[c.stage] !== undefined) rStats.byStage[c.stage]++;
+        if (c.score !== null) {
+          rStats.scoredCount++;
+          rStats.scoreSum += c.score;
+        }
+      }
+    });
+
+    const funnelData = STAGES.map((stage) => ({
+      stage,
+      count: countsByStage[stage] || 0,
+    }));
+    const maxFunnelCount = Math.max(...funnelData.map((f) => f.count), 1);
+    const totalApplied = candidates.length;
+    const totalHired = countsByStage['hired'] || 0;
+    const conversionRate = totalApplied > 0 ? ((totalHired / totalApplied) * 100).toFixed(1) : '0';
+    const avgScore = scoredCount > 0 ? (totalScoreSum / scoredCount).toFixed(1) : '—';
+
+    const recruiterStats = availableMembers.map((member: any) => {
+      const stats = recruitersMap[member.id];
+      const conversion = stats.total > 0 ? ((stats.hired / stats.total) * 100).toFixed(0) : '0';
+      const avgMemberScore = stats.scoredCount > 0 ? (stats.scoreSum / stats.scoredCount).toFixed(1) : null;
+
+      return {
+        ...member,
+        total: stats.total,
+        hired: stats.hired,
+        conversion,
+        avgScore: avgMemberScore,
+        byStage: stats.byStage,
+      };
+    }).sort((a, b) => b.total - a.total);
+
+    return { funnelData, maxFunnelCount, totalApplied, totalHired, conversionRate, avgScore, recruiterStats };
+  }, [candidates, teamMembers, profile?.id, profile?.platform_role]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,49 +151,6 @@ export function RecruitmentAnalytics() {
       </div>
     );
   }
-
-  // Overall funnel
-  const funnelData = STAGES.map((stage) => ({
-    stage,
-    count: candidates.filter((c: any) => c.stage === stage).length,
-  }));
-  const maxFunnelCount = Math.max(...funnelData.map((f) => f.count), 1);
-  const totalApplied = candidates.length;
-  const totalHired = funnelData.find((f) => f.stage === 'hired')?.count || 0;
-  const conversionRate = totalApplied > 0 ? ((totalHired / totalApplied) * 100).toFixed(1) : '0';
-
-  const avgScore = candidates.filter((c: any) => c.score !== null).length > 0
-    ? (candidates
-        .filter((c: any) => c.score !== null)
-        .reduce((sum: number, c: any) => sum + c.score, 0) /
-        candidates.filter((c: any) => c.score !== null).length
-      ).toFixed(1)
-    : '—';
-
-  // Per-recruiter stats
-  const recruiterStats = [...teamMembers,
-    ...(profile?.platform_role === 'recruiter' ? [{ id: profile.id, full_name: 'You', platform_role: 'recruiter' }] : [])
-  ].map((member: any) => {
-    const memberCandidates = candidates.filter((c: any) => c.assigned_to === member.id);
-    const hired = memberCandidates.filter((c: any) => c.stage === 'hired').length;
-    const conversion = memberCandidates.length > 0 ? ((hired / memberCandidates.length) * 100).toFixed(0) : '0';
-    const avgMemberScore = memberCandidates.filter((c: any) => c.score !== null).length > 0
-      ? (memberCandidates.filter((c: any) => c.score !== null).reduce((s: number, c: any) => s + c.score, 0) /
-          memberCandidates.filter((c: any) => c.score !== null).length).toFixed(1)
-      : null;
-
-    return {
-      ...member,
-      total: memberCandidates.length,
-      hired,
-      conversion,
-      avgScore: avgMemberScore,
-      byStage: STAGES.reduce((acc: any, s) => {
-        acc[s] = memberCandidates.filter((c: any) => c.stage === s).length;
-        return acc;
-      }, {}),
-    };
-  }).sort((a, b) => b.total - a.total);
 
   const getInitials = (name: string) =>
     name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';

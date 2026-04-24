@@ -97,8 +97,11 @@ export function AIAssistant() {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           size="lg"
+          aria-label="Open AI Assistant"
           onClick={() => setOpen(true)}
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all hover:scale-110 animate-in fade-in slide-in-from-bottom-4"
+          aria-label="Open HR AI Assistant"
+          title="Open HR AI Assistant"
         >
           <Sparkles className="h-6 w-6" />
         </Button>
@@ -115,7 +118,7 @@ export function AIAssistant() {
             <span>HR AI Assistant</span>
             <Badge className="bg-success/10 text-success border-success/30 text-[10px]">Online</Badge>
           </CardTitle>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)} aria-label="Close AI Assistant" title="Close AI Assistant">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
@@ -140,8 +143,9 @@ export function AIAssistant() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               className="text-sm"
+              autoFocus
             />
-            <Button size="icon" onClick={handleSend} disabled={!input.trim()}>
+            <Button size="icon" onClick={handleSend} disabled={!input.trim()} aria-label="Send message" title="Send message">
               <Send className="h-4 w-4" />
             </Button>
           </div>
