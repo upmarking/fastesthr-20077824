@@ -1,3 +1,6 @@
+## 2024-12-05 - N+1 Query Anti-Pattern in React Query
+**Learning:** Avoid using `Promise.all` `.map` loops containing independent database `.select()` queries inside `useQuery` query functions. This triggers sequential parallel queries, creating an N+1 scaling bottleneck that significantly slows down frontend rendering as lists grow.
+**Action:** Extract all IDs into a unique array, execute a single `supabase.from().select().in()` bulk query, and construct a local Javascript Map to join the fetched data back to the primary list.
 ## 2024-06-03 - Combine Supabase Queries for Dependent Metrics
 **Learning:** In dashboards or overviews, fetching multiple dependent metrics (e.g., employee count, department stats, attrition count) via individual React Query `useQuery` calls results in an N+1-like network problem to Supabase. Even if run in parallel, it generates redundant queries on the same table (e.g., `employees`).
 **Action:** Always inspect dashboard components for redundant data fetching. When multiple metrics are derived from the same base table (e.g., `employees`), combine them into a single `useQuery` that fetches the entire required dataset once and computes the derived stats locally, reducing network latency and database load.
