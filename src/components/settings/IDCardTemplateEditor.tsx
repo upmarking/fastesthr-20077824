@@ -11,6 +11,7 @@ import DOMPurify from 'dompurify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, Eye, Code, Save, Info, Sparkles } from 'lucide-react';
+import { escapeHtml } from '@/lib/utils';
 
 export function IDCardTemplateEditor() {
   const { profile } = useAuthStore();
@@ -76,7 +77,7 @@ export function IDCardTemplateEditor() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), () => val);
+      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(String(val)));
     });
 
     return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
