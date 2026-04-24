@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   Briefcase, Users, Plus, Loader2, Send, Star, Pencil,
   Share2, ExternalLink, UserCheck, BarChart3, Crown, Sparkles, Bot, Zap, Layers, BrainCircuit,
-  Mail, Phone
+  Mail, Phone, UserPlus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -130,7 +130,7 @@ export default function Recruitment() {
     queryFn: async () => {
       const { data } = await supabase
         .from('candidates')
-        .select('*, assigned_profile:assigned_to(id, full_name)')
+        .select('*, assigned_profile:assigned_to(id, full_name), referrer:referred_by(id, full_name)')
         .eq('job_id', activeJob!)
         .order('created_at', { ascending: false });
       return data || [];
@@ -441,6 +441,16 @@ export default function Recruitment() {
                                           <UserCheck className="h-3 w-3" />
                                           Assign Recruiter
                                         </button>
+                                      )}
+
+                                      {/* Referrer chip */}
+                                      {(candidate as any).referrer && (
+                                        <div className="flex items-center gap-1.5 mb-3 bg-emerald-500/5 p-1 px-2 rounded-lg border border-emerald-500/10">
+                                          <UserPlus className="h-3 w-3 text-emerald-500" />
+                                          <span className="text-[9px] font-bold text-emerald-500/80 uppercase tracking-tight">
+                                            Added by {(candidate as any).referrer.full_name}
+                                          </span>
+                                        </div>
                                       )}
 
                                       <div className="flex flex-wrap gap-1.5">

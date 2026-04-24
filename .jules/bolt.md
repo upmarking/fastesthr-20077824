@@ -5,7 +5,6 @@
 ## 2026-03-29 - Use Metadata Wrappers for List Filtering Optimization
 **Learning:** Directly augmenting or cloning source data objects (e.g., `employees.map(e => ({ ...e, _searchStr }))`) to optimize list filtering breaks referential integrity. This can cause unnecessary re-renders in child components and break logic relying on object identity (e.g., selection state).
 **Action:** When optimizing list filtering with `useMemo`, use a metadata wrapper pattern: `list.map(item => ({ item, precalculatedField }))`. Perform the filter on the metadata and then map back to the original `item` references. This preserves identity while still eliminating redundant allocations and operations during filtering.
-
-## 2024-04-16 - Prevent Excessive API Calls via Debouncing React Query Keys
-**Learning:** Using raw, rapidly changing state (like search input strings) directly as dependencies in a React Query `queryKey` can cause N+1-like network redundancies and excessive database/API calls on every single keystroke.
-**Action:** When a user input drives a network query, always create a debounced version of the input using a hook (e.g., `useDebounce`) and use the debounced value in both the `queryKey` and `queryFn` to batch updates.
+## 2024-05-18 - Unnecessary API calls due to missing input debouncing
+**Learning:** Raw input search values used directly inside React Query `queryKey` without debouncing can trigger excessive network and database calls (one per keystroke) leading to significant overhead.
+**Action:** Always wrap user text input state with `useDebounce` and use the debounced value in the query dependencies instead of the raw input.

@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { Cpu, Zap, Database, Shield, Radio, Activity, ChevronRight, Layers } from 'lucide-react';
+import { SEO } from '@/components/seo/SEO';
 
 const CoreEngine = () => {
   const { scrollYProgress } = useScroll();
@@ -9,6 +10,17 @@ const CoreEngine = () => {
 
   return (
     <PublicLayout title="Core Engine">
+      <SEO 
+        title="Global HR Infrastructure & Core Engine | FastestHR"
+        description="Scalable, sub-millisecond HR infrastructure built on a proprietary hyper-graph topology. Discover the engine powering the world's fastest HRMS."
+        keywords="HR infrastructure, scalable HRMS architecture, graph-based HR database, enterprise HR engine"
+        type="software"
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Platform', path: '/' },
+          { name: 'Core Engine', path: '/platform/core-engine' }
+        ]}
+      />
       <div className="relative z-10 space-y-32 py-10">
         
         {/* Hero Section */}

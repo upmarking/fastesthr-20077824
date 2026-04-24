@@ -1,8 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import DOMPurify from 'dompurify';
 import { Loader2, CheckCircle2, ShieldCheck, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+const escapeHtml = (unsafe: string) => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
 
 export default function PublicIDCard() {
   const { publicId } = useParams<{ publicId: string }>();
@@ -39,10 +49,10 @@ export default function PublicIDCard() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), val);
+      html = html.replace(new RegExp(key, 'g'), escapeHtml(val));
     });
 
-    return html;
+    return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
   };
 
   if (isLoading) {
