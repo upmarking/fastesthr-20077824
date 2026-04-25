@@ -28,3 +28,7 @@
 ## 2024-05-18 - Unnecessary API calls due to missing input debouncing
 **Learning:** Raw input search values used directly inside React Query `queryKey` without debouncing can trigger excessive network and database calls (one per keystroke) leading to significant overhead.
 **Action:** Always wrap user text input state with `useDebounce` and use the debounced value in the query dependencies instead of the raw input.
+
+## 2024-04-25 - Brittle Timestamp String Comparison
+**Learning:** Comparing string representations of timestamps directly from Supabase (which may use `+00:00` offsets depending on the column type) against local ISO strings (ending in `Z`) is brittle and prone to failure, breaking idempotency logic.
+**Action:** When comparing dates to prevent duplicate entries, always parse both timestamps into a standard format, such as comparing numerical integer representations using `new Date(...).getTime()`.
