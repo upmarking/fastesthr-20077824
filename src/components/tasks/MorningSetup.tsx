@@ -196,6 +196,7 @@ export function MorningSetup() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
+                  aria-label="Remove time slot"
                   onClick={() => removeSlot(index)}
                   className="h-11 w-11 text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                 >
