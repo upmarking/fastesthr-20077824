@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Download, Trash2, Search, FolderOpen, Shield, FileCheck, File } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,11 +89,39 @@ export default function Documents() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const filteredDocs = documents.filter(doc => {
-    const matchSearch = doc.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = activeTab === 'all' || doc.category === activeTab;
-    return matchSearch && matchCategory;
-  });
+  // ⚡ Bolt: Single-Pass Aggregation over Repeated Filtering
+  // We compute filtered lists and per-category counts in one pass to avoid
+  // repeatedly calling filter() on the potentially large documents array during render.
+  const { filteredDocs, expiringCount, categoryCounts } = useMemo(() => {
+    let expCount = 0;
+    const catCounts: Record<string, number> = {};
+    const filtered: any[] = [];
+    const lowerSearch = search.toLowerCase();
+    const now = new Date();
+
+    documents.forEach(doc => {
+      // Category count tally
+      catCounts[doc.category] = (catCounts[doc.category] || 0) + 1;
+
+      // Expiry calculation
+      if (doc.expiresAt) {
+        const exp = new Date(doc.expiresAt);
+        const daysLeft = differenceInDays(exp, now);
+        if (daysLeft <= 30) {
+          expCount++;
+        }
+      }
+
+      // Filtering
+      const matchSearch = doc.name.toLowerCase().includes(lowerSearch);
+      const matchCategory = activeTab === 'all' || doc.category === activeTab;
+      if (matchSearch && matchCategory) {
+        filtered.push(doc);
+      }
+    });
+
+    return { filteredDocs: filtered, expiringCount: expCount, categoryCounts: catCounts };
+  }, [documents, search, activeTab]);
 
   const getExpiryStatus = (expiresAt?: string) => {
     if (!expiresAt) return null;
@@ -104,14 +132,6 @@ export default function Documents() {
     if (daysLeft <= 30) return { label: `Expires in ${daysLeft}d`, class: 'border-warning text-warning bg-warning/10' };
     return { label: `Expires: ${expiresAt}`, class: 'border-muted text-muted-foreground' };
   };
-
-  const now = new Date();
-  const expiringCount = documents.filter(d => {
-    if (!d.expiresAt) return false;
-    const exp = new Date(d.expiresAt);
-    const daysLeft = differenceInDays(exp, now);
-    return daysLeft <= 30;
-  }).length;
 
   const handleCreate = async () => {
     if (!form.name.trim()) { toast.error('Document name is required'); return; }
@@ -295,7 +315,7 @@ export default function Documents() {
       {/* Category Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map(cat => {
-          const count = documents.filter(d => d.category === cat.value).length;
+          const count = categoryCounts[cat.value] || 0;
           return (
             <Card key={cat.value} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setActiveTab(cat.value)}>
               <CardContent className="p-5 flex items-center gap-4">
