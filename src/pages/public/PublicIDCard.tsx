@@ -62,8 +62,11 @@ export default function PublicIDCard() {
         </div>
         <h1 className="text-2xl font-bold mb-2">Invalid or Expired ID</h1>
         <p className="text-muted-foreground max-w-md">
-          The Virtual ID Card you are looking for could not be verified. It may have been deactivated or the link is incorrect.
+          {error ? `Verification Error: ${error.message}` : "The Virtual ID Card you are looking for could not be verified. It may have been deactivated or the link is incorrect."}
         </p>
+        <div className="mt-4 text-xs font-mono text-muted-foreground opacity-50">
+          ID: {publicId}
+        </div>
         <a href="/" className="mt-8 text-primary font-semibold hover:underline">Return to FastestHR.com</a>
       </div>
     );
@@ -97,8 +100,10 @@ export default function PublicIDCard() {
           <div className="p-4 bg-background border border-border/40 rounded-2xl shadow-sm">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">Status</p>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-success animate-pulse"></div>
-              <span className="text-sm font-bold">Active Employee</span>
+              <div className={`h-2 w-2 rounded-full ${employee.status === 'active' ? 'bg-success animate-pulse' : 'bg-destructive'}`}></div>
+              <span className="text-sm font-bold capitalize">
+                {employee.status?.replace('_', ' ') || 'Inactive'} Employee
+              </span>
             </div>
           </div>
           <div className="p-4 bg-background border border-border/40 rounded-2xl shadow-sm">

@@ -6,6 +6,9 @@
 -- This function allows public access to specific employee fields for ID verification.
 -- It is SECURITY DEFINER to bypass RLS, but strictly returns only non-sensitive fields.
 
+-- Drop any existing versions to avoid signature conflicts
+DROP FUNCTION IF EXISTS public.get_employee_by_public_id(text);
+
 CREATE OR REPLACE FUNCTION public.get_employee_by_public_id(p_public_id text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -25,6 +28,7 @@ BEGIN
       'personal_email', e.personal_email,
       'phone', e.phone,
       'avatar_url', e.avatar_url,
+      'status', e.status,
       'created_at', e.created_at,
       'companies', jsonb_build_object(
         'name', c.name,
@@ -39,8 +43,9 @@ BEGIN
   FROM public.employees e
   LEFT JOIN public.companies c ON e.company_id = c.id
   LEFT JOIN public.designations d ON e.designation_id = d.id
-  WHERE e.public_id = p_public_id
-    AND e.deleted_at IS NULL;
+  WHERE (e.public_id::text = p_public_id OR e.id::text = p_public_id)
+    AND e.deleted_at IS NULL
+  LIMIT 1;
 
   RETURN result;
 END;
