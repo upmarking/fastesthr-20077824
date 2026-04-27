@@ -12,11 +12,9 @@ export default function PublicIDCard() {
   const { data: employee, isLoading, error } = useQuery({
     queryKey: ['public-id-card', publicId],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('employees')
-        .select('*, companies(*), designations(title)')
-        .eq('public_id', publicId!)
-        .single() as any);
+      const { data, error } = await supabase.rpc('get_employee_by_public_id', {
+        p_public_id: publicId,
+      });
       
       if (error) throw error;
       return data as any;

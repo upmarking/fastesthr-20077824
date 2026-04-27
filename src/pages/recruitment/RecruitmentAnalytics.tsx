@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import {
   BarChart3, TrendingUp, Users, Target, Award, Loader2,
   ArrowUpRight, Star

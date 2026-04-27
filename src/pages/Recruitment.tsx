@@ -130,7 +130,7 @@ export default function Recruitment() {
     queryFn: async () => {
       const { data } = await supabase
         .from('candidates')
-        .select('*, assigned_profile:assigned_to(id, full_name), referrer:referred_by(id, full_name)')
+        .select('*,assigned_profile:profiles!candidates_assigned_to_fkey(id,full_name)')
         .eq('job_id', activeJob!)
         .order('created_at', { ascending: false });
       return data || [];

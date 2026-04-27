@@ -125,12 +125,7 @@ export function RecruitmentLeadsBoard() {
     queryFn: async () => {
       let query = (supabase as any)
         .from('candidates')
-        .select(`
-          *,
-          jobs(title, id),
-          assigned_profile:assigned_to(id, full_name, platform_role),
-          referrer:referred_by(id, full_name)
-        `)
+        .select('*,jobs(title,id),assigned_profile:profiles!candidates_assigned_to_fkey(id,full_name,platform_role)')
         .eq('company_id', profile!.company_id!)
         .order('assigned_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
