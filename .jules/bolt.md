@@ -28,3 +28,6 @@
 ## 2024-05-18 - Unnecessary API calls due to missing input debouncing
 **Learning:** Raw input search values used directly inside React Query `queryKey` without debouncing can trigger excessive network and database calls (one per keystroke) leading to significant overhead.
 **Action:** Always wrap user text input state with `useDebounce` and use the debounced value in the query dependencies instead of the raw input.
+## 2026-04-27 - Prevent Duplicate Submissions via Strict Timestamp Parsing
+**Learning:** Using strict string comparison on dates from the database compared to locally formatted dates (such as comparing `2023-10-10T10:00:00+00:00` vs `2023-10-10T10:00:00Z`) will cause comparisons to fail incorrectly, breaking deduplication logic.
+**Action:** Always parse timestamp strings into numerical representations using `new Date(timestamp).getTime()` before creating lookups or checking equality to prevent duplicates being written to the database.
