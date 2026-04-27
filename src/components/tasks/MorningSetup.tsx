@@ -67,27 +67,35 @@ export function MorningSetup() {
       if (reportError) throw reportError;
 
       // 2. Create/Sync tasks
-      // For simplicity, we'll create new tasks for slots that don't have matching tasks yet
-      // In a production app, we might want to reconcile them more intelligently.
-      const taskPromises = updatedSlots.map(async (slot) => {
-        if (!slot.focus) return;
+      // ⚡ Bolt: Fetch all relevant tasks for today in a single query to avoid N+1 bottleneck
+      const validSlots = updatedSlots.filter((slot) => slot.focus);
 
-        // Check if task already exists for this slot today
-        const startTs = `${today}T${slot.startTime}:00Z`;
-        const endTs = `${today}T${slot.endTime}:00Z`;
+      if (validSlots.length > 0) {
+        const startOfToday = `${today}T00:00:00Z`;
+        const endOfToday = `${today}T23:59:59Z`;
 
-        const { data: existingTasks } = await supabase
+        const { data: existingTasks, error: fetchError } = await supabase
           .from('tasks')
-          .select('id')
+          .select('title, scheduled_start')
           .eq('assigned_to', profile!.id)
-          .eq('title', slot.focus)
-          .eq('scheduled_start', startTs)
-          .limit(1);
+          .gte('scheduled_start', startOfToday)
+          .lte('scheduled_start', endOfToday);
 
-        if (!existingTasks || existingTasks.length === 0) {
-          return supabase
-            .from('tasks')
-            .insert({
+        if (fetchError) throw fetchError;
+
+        // Create a quick lookup Set for existing tasks: "title|timestamp"
+        const existingTaskSet = new Set(
+          (existingTasks || []).map(t => `${t.title}|${new Date(t.scheduled_start).getTime()}`)
+        );
+
+        const newTasksToInsert = [];
+        for (const slot of validSlots) {
+          const startTs = `${today}T${slot.startTime}:00Z`;
+          const endTs = `${today}T${slot.endTime}:00Z`;
+          const taskKey = `${slot.focus}|${new Date(startTs).getTime()}`;
+
+          if (!existingTaskSet.has(taskKey)) {
+            newTasksToInsert.push({
               title: slot.focus,
               company_id: profile!.company_id!,
               assigned_to: profile!.id,
@@ -96,10 +104,18 @@ export function MorningSetup() {
               scheduled_start: startTs,
               scheduled_end: endTs,
             });
+          }
         }
-      });
 
-      await Promise.all(taskPromises);
+        if (newTasksToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('tasks')
+            .insert(newTasksToInsert);
+
+          if (insertError) throw insertError;
+        }
+      }
+
       return true;
     },
     onSuccess: () => {
