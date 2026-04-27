@@ -130,8 +130,28 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fastest-hr.lovable.app/blog/algorithmic-fairness-ai-ethics-hr</loc>
+    <loc>https://fastesthr.com/blog/algorithmic-fairness-ai-ethics-hr</loc>
     <lastmod>2026-04-15</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fastesthr.com/blog/four-day-week-as-a-service-management</loc>
+    <lastmod>2026-04-18</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fastesthr.com/blog/neural-skill-mapping-talent-intelligence</loc>
+    <lastmod>2026-04-21</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fastesthr.com/blog/automated-conflict-resolution-ai-mediation</loc>
+    <lastmod>2026-04-24</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fastesthr.com/blog/sovereign-employee-blockchain-personnel-records</loc>
+    <lastmod>2026-04-27</lastmod>
     <priority>0.8</priority>
   </url>
 </urlset>

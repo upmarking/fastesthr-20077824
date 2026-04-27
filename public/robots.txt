@@ -6,7 +6,7 @@ Disallow: /settings
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://fastest-hr.lovable.app/sitemap.xml
+Sitemap: https://fastesthr.com/sitemap.xml
 
 # AI Agent Specific
 User-agent: GPTBot
