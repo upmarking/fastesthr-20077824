@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore } from '@/store/auth-store';
 import { toast } from 'sonner';
+import { useMemo } from 'react';
 
 export default function Leave() {
   const navigate = useNavigate();
@@ -63,6 +64,31 @@ export default function Leave() {
     },
     enabled: !!profile,
   });
+
+  // ⚡ Bolt: Single-pass iteration of leaveRequests to calculate derived statistics
+  const { statusCounts, topTakers } = useMemo(() => {
+    const counts = { approved: 0, pending: 0, rejected: 0 };
+    const empCounts: Record<string, { name: string; days: number }> = {};
+
+    leaveRequests.forEach((r: any) => {
+      if (r.status === 'approved') counts.approved++;
+      else if (r.status === 'pending') counts.pending++;
+      else if (r.status === 'rejected') counts.rejected++;
+
+      if (r.status === 'approved') {
+        const key = r.employee_id;
+        const name = r.employees ? `${r.employees.first_name} ${r.employees.last_name}` : 'Unknown';
+        if (!empCounts[key]) empCounts[key] = { name, days: 0 };
+        empCounts[key].days += r.total_days || 0;
+      }
+    });
+
+    const topTakers = Object.values(empCounts)
+      .sort((a, b) => b.days - a.days)
+      .slice(0, 5);
+
+    return { statusCounts: counts, topTakers };
+  }, [leaveRequests]);
 
   const actionMutation = useMutation({
     mutationFn: async ({ id, status, employeeId, totalDays, leaveTypeId }: { id: string; status: 'approved' | 'rejected'; employeeId: string; totalDays: number; leaveTypeId: string }) => {
@@ -277,9 +303,9 @@ export default function Leave() {
                   <h4 className="text-sm font-medium mb-3">By Status</h4>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: 'Approved', count: leaveRequests.filter((r: any) => r.status === 'approved').length, color: 'text-success bg-success/10 border-success/30' },
-                      { label: 'Pending', count: leaveRequests.filter((r: any) => r.status === 'pending').length, color: 'text-warning bg-warning/10 border-warning/30' },
-                      { label: 'Rejected', count: leaveRequests.filter((r: any) => r.status === 'rejected').length, color: 'text-destructive bg-destructive/10 border-destructive/30' },
+                      { label: 'Approved', count: statusCounts.approved, color: 'text-success bg-success/10 border-success/30' },
+                      { label: 'Pending', count: statusCounts.pending, color: 'text-warning bg-warning/10 border-warning/30' },
+                      { label: 'Rejected', count: statusCounts.rejected, color: 'text-destructive bg-destructive/10 border-destructive/30' },
                     ].map(item => (
                       <div key={item.label} className={`text-center p-3 rounded border ${item.color}`}>
                         <p className="text-xs">{item.label}</p>
@@ -293,21 +319,12 @@ export default function Leave() {
                 <div>
                   <h4 className="text-sm font-medium mb-3">Top Leave Takers</h4>
                   <div className="space-y-2">
-                    {(() => {
-                      const empCounts: Record<string, { name: string; days: number }> = {};
-                      leaveRequests.filter((r: any) => r.status === 'approved').forEach((r: any) => {
-                        const key = r.employee_id;
-                        const name = r.employees ? `${r.employees.first_name} ${r.employees.last_name}` : 'Unknown';
-                        if (!empCounts[key]) empCounts[key] = { name, days: 0 };
-                        empCounts[key].days += r.total_days || 0;
-                      });
-                      return Object.values(empCounts).sort((a, b) => b.days - a.days).slice(0, 5).map((emp, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm p-2 rounded border border-border/50 bg-background/50">
-                          <span>{emp.name}</span>
-                          <Badge variant="outline">{emp.days} days</Badge>
-                        </div>
-                      ));
-                    })()}
+                    {topTakers.map((emp, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm p-2 rounded border border-border/50 bg-background/50">
+                        <span>{emp.name}</span>
+                        <Badge variant="outline">{emp.days} days</Badge>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
