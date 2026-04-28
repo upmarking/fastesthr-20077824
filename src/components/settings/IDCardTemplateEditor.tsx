@@ -77,7 +77,9 @@ export function IDCardTemplateEditor() {
     };
 
     Object.entries(placeholders).forEach(([key, val]) => {
-      html = html.replace(new RegExp(key, 'g'), () => escapeHtml(String(val)));
+      // Escape special regex characters to prevent ReDoS/Regex Injection
+      const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp(safeKey, 'g'), () => escapeHtml(String(val)));
     });
 
     return DOMPurify.sanitize(html, { ADD_TAGS: ['style'], ADD_ATTR: ['style'], FORCE_BODY: true });
