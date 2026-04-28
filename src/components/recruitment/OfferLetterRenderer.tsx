@@ -23,7 +23,9 @@ export function OfferLetterRenderer({
     let content = htmlContent;
     Object.entries(variables).forEach(([key, value]) => {
       // Support both {{Key}} and {{key}} formats
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+      // Escape special regex characters to prevent ReDoS/Regex Injection
+      const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\{\\{${safeKey}\\}\\}`, 'gi');
       content = content.replace(regex, () => value);
     });
     // Sanitize the HTML to prevent XSS vulnerabilities while allowing custom styles
@@ -149,7 +151,9 @@ export function OfferLetterRenderer({
 export function replaceVariables(html: string, variables: Record<string, string>): string {
     let content = html;
     Object.entries(variables).forEach(([key, value]) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+      // Escape special regex characters to prevent ReDoS/Regex Injection
+      const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\{\\{${safeKey}\\}\\}`, 'gi');
       content = content.replace(regex, () => value);
     });
     return content;
