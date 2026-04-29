@@ -28,3 +28,6 @@
 ## 2024-05-18 - Unnecessary API calls due to missing input debouncing
 **Learning:** Raw input search values used directly inside React Query `queryKey` without debouncing can trigger excessive network and database calls (one per keystroke) leading to significant overhead.
 **Action:** Always wrap user text input state with `useDebounce` and use the debounced value in the query dependencies instead of the raw input.
+## 2024-05-19 - Batch Insert Operations
+**Learning:** Performing database inserts inside a `.map` using `Promise.all` executes independent network requests for each item. This scaling bottleneck delays response times and can overwhelm the database for larger lists.
+**Action:** Always batch related database inserts by transforming data arrays into an array of objects to pass to a single `.insert()` operation.
