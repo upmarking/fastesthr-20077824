@@ -27,3 +27,7 @@
 **Vulnerability:** In `OfferLetterRenderer.tsx`, `DocumentRenderer.tsx`, and `pdf-generator.ts`, `String.prototype.replace(regex, value)` was used to substitute variables into HTML templates. If the user input contained special regex tokens like `$&` (which inserts the matched substring), it caused unintended injections and manipulation of the final output.
 **Learning:** `String.prototype.replace()` interprets special replacement patterns (like `$&`, `$`, `$\``, `$'`) when passing a string as the second argument, bypassing simple HTML escaping if the token is valid in regex contexts.
 **Prevention:** Always use a replacer function `String.prototype.replace(regex, () => value)` when replacing with dynamic or untrusted strings, as functions do not evaluate these special regex tokens.
+## 2025-03-22 - Regex Injection (ReDoS) via Dynamic Object Keys in Template Renderers
+**Vulnerability:** Passing unescaped, dynamic object keys (e.g., user-defined template placeholders `{{key}}`) directly into `new RegExp(key, 'g')` exposes the application to Regular Expression Denial of Service (ReDoS) or unintended matching behavior if the keys contain regex metacharacters.
+**Learning:** Even internal or semi-trusted inputs (like variable keys from templates) can be leveraged to inject expensive regex logic if not properly sanitized before compilation.
+**Prevention:** Always escape regex metacharacters (e.g., using `key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`) before interpolating dynamic strings into `new RegExp()`.
