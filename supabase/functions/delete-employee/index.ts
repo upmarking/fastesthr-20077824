@@ -22,22 +22,25 @@ Deno.serve(async (req) => {
     const platformAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     const platformServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    // 1. Authenticate caller
-    const supabaseClient = createClient(platformUrl, platformAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    // Create platform admin client (service_role)
+    const adminSupabase = createClient(platformUrl, platformServiceKey, {
+      auth: { persistSession: false },
     });
 
+    // 1. Authenticate caller using token
+    const token = authHeader.replace(/^Bearer\s+/i, '');
     const {
       data: { user: adminUser },
       error: userError,
-    } = await supabaseClient.auth.getUser();
+    } = await adminSupabase.auth.getUser(token);
 
     if (userError || !adminUser) {
-      throw new Error('Unauthorized: Authentication required');
+      console.error('[Auth Error]:', userError);
+      throw new Error(`Unauthorized: ${userError?.message || 'Authentication required'}`);
     }
 
     // 2. Fetch admin profile and check role
-    const { data: adminProfile, error: profileError } = await supabaseClient
+    const { data: adminProfile, error: profileError } = await adminSupabase
       .from('profiles')
       .select('id, platform_role, company_id, full_name')
       .eq('id', adminUser.id)
@@ -48,6 +51,7 @@ Deno.serve(async (req) => {
       !adminProfile ||
       (adminProfile.platform_role !== 'company_admin' && adminProfile.platform_role !== 'super_admin')
     ) {
+      console.error('[Role Forbidden]:', profileError, adminProfile);
       throw new Error('Forbidden: Only Company Administrators or Super Administrators can permanently delete an employee');
     }
 
@@ -55,11 +59,6 @@ Deno.serve(async (req) => {
     if (!employee_id) {
       throw new Error('Missing required parameter: employee_id');
     }
-
-    // 3. Create platform admin client (service_role)
-    const adminSupabase = createClient(platformUrl, platformServiceKey, {
-      auth: { persistSession: false },
-    });
 
     // 4. Fetch target employee details to verify
     const { data: targetEmployee, error: targetError } = await adminSupabase

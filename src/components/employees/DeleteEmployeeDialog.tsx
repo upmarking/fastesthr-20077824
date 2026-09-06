@@ -72,35 +72,38 @@ export function DeleteEmployeeDialog({
       if (!employee?.id) throw new Error('No employee selected');
       if (isSelf) throw new Error('You cannot delete your own Administrator account.');
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('delete-employee', {
+        body: {
+          employee_id: employee.id,
+        },
+      });
 
-      if (!session?.access_token) {
-        throw new Error('You must be authenticated to perform this action');
+      if (error) {
+        let msg = error.message;
+        try {
+          if (error.context) {
+            if (typeof error.context.json === 'function') {
+              const body = await error.context.json();
+              if (body?.error) msg = body.error;
+            } else if (typeof error.context.text === 'function') {
+              const text = await error.context.text();
+              try {
+                const parsed = JSON.parse(text);
+                if (parsed?.error) msg = parsed.error;
+              } catch (_) {
+                if (text) msg = text;
+              }
+            }
+          }
+        } catch (_) {}
+        throw new Error(msg || 'Failed to delete employee and account');
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-employee`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            employee_id: employee.id,
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete employee and account');
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      return result;
+      return data;
     },
     onSuccess: (data) => {
       toast.success(data.message || `Employee ${fullName} was completely removed.`);
