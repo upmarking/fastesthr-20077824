@@ -114,6 +114,14 @@ export default function Attendance() {
   const [geoStatus, setGeoStatus] = useState<string | null>(null);
   const [showGpsTroubleshooting, setShowGpsTroubleshooting] = useState<boolean>(false);
 
+  // Keep live clock, work timer, and active break duration ticking every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const fetchPublicIP = async (): Promise<string | null> => {
     try {
       const res = await fetch('https://api.ipify.org?format=json');
@@ -1014,6 +1022,18 @@ export default function Attendance() {
   const isClockedOut = !!todayRecord?.clock_out;
   const isOnBreak = !!(todayRecord?.clock_in_location && typeof todayRecord.clock_in_location === 'object' && (todayRecord.clock_in_location as any).active_break_start);
 
+  // Calculate live active break elapsed duration
+  let activeBreakElapsedSeconds = 0;
+  if (isOnBreak && (todayRecord?.clock_in_location as any)?.active_break_start) {
+    const start = new Date((todayRecord.clock_in_location as any).active_break_start);
+    activeBreakElapsedSeconds = Math.max(0, Math.floor((currentTime.getTime() - start.getTime()) / 1000));
+  }
+  const activeBreakMins = Math.floor(activeBreakElapsedSeconds / 60);
+  const activeBreakSecs = activeBreakElapsedSeconds % 60;
+  const activeBreakDurationStr = activeBreakMins > 0 
+    ? `${activeBreakMins}m ${activeBreakSecs.toString().padStart(2, '0')}s`
+    : `${activeBreakSecs}s`;
+
   let runningTotal = '00:00:00';
   if (todayRecord?.clock_in) {
     const start = new Date(todayRecord.clock_in);
@@ -1023,9 +1043,8 @@ export default function Attendance() {
     let breakMs = (todayRecord.break_minutes || 0) * 60 * 1000;
     
     // If currently on break, deduct active break elapsed time
-    if (isOnBreak && (todayRecord.clock_in_location as any)?.active_break_start) {
-      const activeBreakStart = new Date((todayRecord.clock_in_location as any).active_break_start);
-      breakMs += Math.max(0, currentTime.getTime() - activeBreakStart.getTime());
+    if (isOnBreak) {
+      breakMs += activeBreakElapsedSeconds * 1000;
     }
     
     const diff = Math.max(0, end.getTime() - start.getTime() - breakMs);
@@ -1114,10 +1133,10 @@ export default function Attendance() {
 
             {/* Active Break Glowing Indicator */}
             {isOnBreak && (
-              <div className="flex flex-col items-center justify-center gap-1 animate-pulse">
+              <div className="flex flex-col items-center justify-center gap-1">
                 <Badge variant="outline" className="border-warning text-warning bg-warning/10 gap-1.5 text-xs font-semibold px-3 py-1">
                   <span className="w-2 h-2 rounded-full bg-warning animate-ping"></span>
-                  On Break (Started {new Date((todayRecord?.clock_in_location as any).active_break_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
+                  On Break: {activeBreakDurationStr} (Started {new Date((todayRecord?.clock_in_location as any).active_break_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
                 </Badge>
                 <span className="text-[11px] text-warning/80 font-medium">Work timer paused &bull; Clock Out will automatically conclude your break</span>
               </div>
@@ -1276,7 +1295,7 @@ export default function Attendance() {
                   {isOnBreak ? (
                     <span className="text-warning font-semibold flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-warning animate-ping" />
-                      In Progress ({todayRecord?.break_minutes || 0}m logged)
+                      {activeBreakDurationStr} in progress{(todayRecord?.break_minutes || 0) > 0 ? ` (${todayRecord.break_minutes}m previous)` : ''}
                     </span>
                   ) : (
                     `${todayRecord?.break_minutes || 0} min`
@@ -1413,7 +1432,18 @@ export default function Attendance() {
                         </div>
                         <div>
                           <span className="text-muted-foreground text-[10px] uppercase block">Break</span>
-                          <span className="font-medium text-muted-foreground">{record.break_minutes ? `${record.break_minutes}m` : '0m'}</span>
+                          <span className="font-medium text-muted-foreground">
+                            {isOnBreak && record.id === todayRecord?.id ? (
+                              <span className="text-warning font-medium flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-warning animate-ping" />
+                                {activeBreakMins > 0 
+                                  ? `${(record.break_minutes || 0) + activeBreakMins}m` 
+                                  : activeBreakDurationStr}
+                              </span>
+                            ) : (
+                              record.break_minutes ? `${record.break_minutes}m` : '0m'
+                            )}
+                          </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground text-[10px] uppercase block">Out</span>
