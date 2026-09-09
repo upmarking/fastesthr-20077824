@@ -758,9 +758,22 @@ export default function Attendance() {
       const clockOutTime = new Date();
       const clockInTime = new Date(todayRecord.clock_in);
       
-      // Calculate total working hours excluding break minutes
-      const breakMins = todayRecord.break_minutes || 0;
-      const totalHours = Math.max(0, (clockOutTime.getTime() - clockInTime.getTime()) / (1000 * 60 * 60) - (breakMins / 60));
+      // Check if user was currently on break; if so, finalize it automatically
+      const clockInLoc = (todayRecord.clock_in_location && typeof todayRecord.clock_in_location === 'object') 
+        ? { ...todayRecord.clock_in_location } 
+        : {};
+      const wasOnBreak = !!(clockInLoc as any).active_break_start;
+      let finalBreakMinutes = todayRecord.break_minutes || 0;
+
+      if (wasOnBreak) {
+        const breakStartTime = new Date((clockInLoc as any).active_break_start);
+        const elapsedBreakMins = Math.max(1, Math.round((clockOutTime.getTime() - breakStartTime.getTime()) / (1000 * 60)));
+        finalBreakMinutes += elapsedBreakMins;
+        delete (clockInLoc as any).active_break_start;
+      }
+
+      // Calculate total working hours excluding finalized break minutes
+      const totalHours = Math.max(0, (clockOutTime.getTime() - clockInTime.getTime()) / (1000 * 60 * 60) - (finalBreakMinutes / 60));
       
       const shiftStartStr = activeShift?.start_time || '09:00:00';
       const shiftEndStr = activeShift?.end_time || '18:00:00';
@@ -770,7 +783,7 @@ export default function Attendance() {
       const isEarlyLeave = clockOutTime.getTime() < shiftEnd.getTime();
 
       let gpsFailed = false;
-      let gpsCoords: { latitude: number; longitude: number; accuracy: number; verified: boolean } | null = null;
+      let gpsCoords: { latitude: number; longitude: number; accuracy: number; verified: boolean; error?: string; location_id?: string } | null = null;
       let clientIP: string | null = null;
       clientIP = await fetchPublicIP();
 
@@ -818,7 +831,7 @@ export default function Attendance() {
             let allowedRadius = 200;
             let distance = 0;
 
-            // A. If clock-in matched a specific location ID, strictly validate clock-out against it
+            // A. If clock-in matched a specific location ID, validate against it
             if (matchedLocationId) {
               const clockInLoc = locations?.find((loc: any) => loc.id === matchedLocationId);
               if (clockInLoc) {
@@ -826,8 +839,6 @@ export default function Attendance() {
                 allowedRadius = clockInLoc.radius_meters || 200;
                 if (distance <= allowedRadius) {
                   locationMatched = true;
-                } else {
-                  throw new Error(`Location verification failed. You are outside the office branch [${clockInLoc.name}] boundary on clock-out (${Math.round(distance)}m away, allowed radius: ${allowedRadius}m).`);
                 }
               }
             }
@@ -863,20 +874,13 @@ export default function Attendance() {
               }
             }
 
-            // D. Raise error if geofence constraints exist but none were satisfied
-            if (!locationMatched) {
-              if ((locations && locations.length > 0) || (company?.geofence_latitude && company?.geofence_longitude)) {
-                throw new Error(`Location verification failed on clock-out. You are outside the allowed office boundaries.`);
-              }
-            }
-
             gpsCoords = {
               latitude,
               longitude,
               accuracy,
-              verified: true,
+              verified: locationMatched,
               location_id: matchedLocationId || undefined
-            } as any;
+            };
           } catch (e: any) {
             console.warn('Failed to capture GPS coordinates on clock out, proceeding with unverified status:', e);
             gpsFailed = true;
@@ -887,7 +891,7 @@ export default function Attendance() {
               verified: false,
               location_id: todayRecord.location_id || undefined,
               error: e.message || 'GPS verification failed on clock-out'
-            } as any;
+            };
           }
         }
       }
@@ -911,12 +915,14 @@ export default function Attendance() {
         }
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('attendance')
         .update({
           clock_out: clockOutTime.toISOString(),
           total_hours: parseFloat(totalHours.toFixed(2)),
           status: statusToSet as any,
+          break_minutes: finalBreakMinutes,
+          clock_in_location: clockInLoc,
           clock_out_location: {
             work_type: workTypeUsed,
             ip_address: clientIP || 'unknown',
@@ -924,11 +930,15 @@ export default function Attendance() {
           },
           location_id: gpsCoords?.location_id || todayRecord.location_id || null
         })
-        .eq('id', todayRecord.id);
+        .eq('id', todayRecord.id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Could not record clock out. Your session may not have permission to update attendance.');
+      }
       if (isEarlyLeave) toast.info(`Early leave recorded. Shift ends at ${shiftEndStr.substring(0, 5)}.`);
-      return { gpsFailed };
+      return { gpsFailed, wasOnBreak, finalBreakMinutes };
     },
     onSuccess: (data) => {
       setGeoStatus(null);
@@ -936,8 +946,10 @@ export default function Attendance() {
       setShowRegularizePromptToday(false);
       queryClient.invalidateQueries({ queryKey: ['attendance-today'] });
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      if (data?.gpsFailed) {
-        toast.warning('Clocked out successfully, but location verification failed. You may need to submit a correction request.');
+      if (data?.wasOnBreak) {
+        toast.success(`Clocked out successfully (break auto-ended, ${data.finalBreakMinutes}m total)`);
+      } else if (data?.gpsFailed) {
+        toast.warning('Clocked out successfully, but location was unverified. You may submit a correction if needed.');
       } else {
         toast.success('Clocked out successfully');
       }
@@ -959,11 +971,11 @@ export default function Attendance() {
         ? { ...todayRecord.clock_in_location } 
         : {};
       
-      const isOnBreak = !!(clockInLoc as any).active_break_start;
+      const currentlyOnBreak = !!(clockInLoc as any).active_break_start;
       const now = new Date();
       
       let updatedBreakMinutes = todayRecord.break_minutes || 0;
-      if (isOnBreak) {
+      if (currentlyOnBreak) {
         const start = new Date((clockInLoc as any).active_break_start);
         const diffMins = Math.max(1, Math.round((now.getTime() - start.getTime()) / (1000 * 60)));
         updatedBreakMinutes += diffMins;
@@ -972,20 +984,28 @@ export default function Attendance() {
         (clockInLoc as any).active_break_start = now.toISOString();
       }
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('attendance')
         .update({
           break_minutes: updatedBreakMinutes,
           clock_in_location: clockInLoc,
         })
-        .eq('id', todayRecord.id);
+        .eq('id', todayRecord.id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('Failed to update break status. Your session may not have permission to update attendance.');
+      }
+      return { startedBreak: !currentlyOnBreak, breakMinutes: updatedBreakMinutes };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['attendance-today'] });
-      const clockInLoc = todayRecord?.clock_in_location as any;
-      const starting = !clockInLoc?.active_break_start;
-      toast.info(starting ? 'Break started' : 'Break ended');
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      if (res?.startedBreak) {
+        toast.success('Break started');
+      } else {
+        toast.success(`Break ended (${res?.breakMinutes || 0}m total break)`);
+      }
     },
     onError: (err: any) => toast.error(err?.message || 'Failed to update break status'),
   });
@@ -998,7 +1018,17 @@ export default function Attendance() {
   if (todayRecord?.clock_in) {
     const start = new Date(todayRecord.clock_in);
     const end = todayRecord.clock_out ? new Date(todayRecord.clock_out) : currentTime;
-    const diff = Math.max(0, end.getTime() - start.getTime());
+    
+    // Deduct recorded breaks
+    let breakMs = (todayRecord.break_minutes || 0) * 60 * 1000;
+    
+    // If currently on break, deduct active break elapsed time
+    if (isOnBreak && (todayRecord.clock_in_location as any)?.active_break_start) {
+      const activeBreakStart = new Date((todayRecord.clock_in_location as any).active_break_start);
+      breakMs += Math.max(0, currentTime.getTime() - activeBreakStart.getTime());
+    }
+    
+    const diff = Math.max(0, end.getTime() - start.getTime() - breakMs);
     const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
     const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
     const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
@@ -1084,11 +1114,12 @@ export default function Attendance() {
 
             {/* Active Break Glowing Indicator */}
             {isOnBreak && (
-              <div className="flex justify-center animate-pulse">
-                <Badge variant="outline" className="border-warning text-warning bg-warning/5 gap-1.5 text-xs font-semibold px-3 py-1">
+              <div className="flex flex-col items-center justify-center gap-1 animate-pulse">
+                <Badge variant="outline" className="border-warning text-warning bg-warning/10 gap-1.5 text-xs font-semibold px-3 py-1">
                   <span className="w-2 h-2 rounded-full bg-warning animate-ping"></span>
                   On Break (Started {new Date((todayRecord?.clock_in_location as any).active_break_start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
                 </Badge>
+                <span className="text-[11px] text-warning/80 font-medium">Work timer paused &bull; Clock Out will automatically conclude your break</span>
               </div>
             )}
 
@@ -1123,7 +1154,7 @@ export default function Attendance() {
                 variant="outline"
                 className="w-full sm:w-32 border-destructive text-destructive hover:bg-destructive/10 px-2 sm:px-4 text-xs sm:text-sm"
                 onClick={() => clockOutMutation.mutate()}
-                disabled={!isClockedIn || clockOutMutation.isPending || isOnBreak}
+                disabled={!isClockedIn || clockOutMutation.isPending}
               >
                 <Square className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" /> Clock Out
               </Button>
@@ -1241,7 +1272,16 @@ export default function Attendance() {
               </div>
               <div className="flex justify-between items-center p-2 rounded border border-border/50 bg-background/50">
                 <span className="text-muted-foreground">Break</span>
-                <span className="font-medium">{todayRecord?.break_minutes || 0} min</span>
+                <span className="font-medium">
+                  {isOnBreak ? (
+                    <span className="text-warning font-semibold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-warning animate-ping" />
+                      In Progress ({todayRecord?.break_minutes || 0}m logged)
+                    </span>
+                  ) : (
+                    `${todayRecord?.break_minutes || 0} min`
+                  )}
+                </span>
               </div>
               <div className="flex justify-between items-center p-2 rounded border border-border/50 bg-background/50">
                 <span className="text-muted-foreground">Total Hours</span>
@@ -1370,6 +1410,10 @@ export default function Attendance() {
                         <div>
                           <span className="text-muted-foreground text-[10px] uppercase block">In</span>
                           <span className="font-medium text-foreground">{record.clock_in ? new Date(record.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-[10px] uppercase block">Break</span>
+                          <span className="font-medium text-muted-foreground">{record.break_minutes ? `${record.break_minutes}m` : '0m'}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground text-[10px] uppercase block">Out</span>
